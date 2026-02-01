@@ -1,0 +1,52 @@
+/* 1. Imports hamesha sabse upar honi chahiye */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* 2. Tailwind Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 3. Global Styles */
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8fafc; 
+  color: #1e293b;
+}
+
+/* 4. Scrollbar Beauty */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 5. Code Font */
+code {
+  font-family: 'Fira Code', monospace;
+}
+
+/* Heatmap Colors */
+.react-calendar-heatmap .color-empty { fill: #f1f5f9; }
+.react-calendar-heatmap .color-scale-1 { fill: #dbeafe; }
+.react-calendar-heatmap .color-scale-2 { fill: #60a5fa; }
+.react-calendar-heatmap .color-scale-3 { fill: #2563eb; }
+.react-calendar-heatmap .color-scale-4 { fill: #1e3a8a; }
+
+.heatmap-container {
+  padding: 10px;
+  font-size: 10px;
+}
