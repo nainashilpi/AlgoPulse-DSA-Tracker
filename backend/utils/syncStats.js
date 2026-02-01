@@ -1,5 +1,10 @@
 const axios = require('axios');
 
+/**
+ * @desc    Fetches real-time statistics for a given LeetCode username via GraphQL API
+ * @param   {string} handle - LeetCode username
+ * @returns {object|null} - Processed stats or null if fetch fails
+ */
 const fetchLeetCodeStats = async (handle) => {
   const query = `
     query userProfile($username: String!) {
@@ -28,16 +33,17 @@ const fetchLeetCodeStats = async (handle) => {
 
     const stats = data.submitStats.acSubmissionNum;
     
-    // Combine all topic tags and sort by most solved
+    // Consolidate all difficulty tags into a single array
     const allTags = [
       ...data.tagProblemCounts.fundamental,
       ...data.tagProblemCounts.intermediate,
       ...data.tagProblemCounts.advanced
     ];
 
+    // Sort by most problems solved and pick the Top 9
     const sortedTopics = allTags
       .sort((a, b) => b.problemsSolved - a.problemsSolved)
-      .slice(0, 6)
+      .slice(0, 9)
       .map(t => ({
         name: t.tagName,
         solved: t.problemsSolved

@@ -1,13 +1,25 @@
+
 const express = require('express');
 const router = express.Router();
-const { addProblem, getLatestProblem } = require('../controllers/problemController');
+const { 
+  addProblem, 
+  getLatestProblem, 
+  updateProblem, 
+  deleteProblem  
+} = require('../controllers/problemController');
 const { protect } = require('../middleware/authMiddleware');
-const { admin } = require('../middleware/adminMiddleware'); // Humne pehle banaya tha!
+const { admin } = require('../middleware/adminMiddleware');
 
-// Koi bhi dekh sakta hai
+// @route   GET /api/problems/latest
 router.get('/latest', getLatestProblem);
 
-// Sirf Admin (Tu) post kar sakti hai
+// @route   POST /api/problems/add
 router.post('/add', protect, admin, addProblem);
+
+// @route   PUT /api/problems/:id
+router.put('/:id', protect, admin, updateProblem);
+
+// @route   DELETE /api/problems/:id
+router.delete('/:id', protect, admin, deleteProblem);
 
 module.exports = router;

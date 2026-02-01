@@ -33,8 +33,6 @@ exports.register = async (req, res) => {
   }
 };
 
-
-
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -55,7 +53,7 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
       process.env.JWT_SECRET, 
-      { expiresIn: '1d' } // Token 1 din tak valid rahega
+      { expiresIn: '30d' } // Token valid till 30 days
     );
 
     res.json({
