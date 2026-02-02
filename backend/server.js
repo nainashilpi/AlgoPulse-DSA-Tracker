@@ -6,33 +6,27 @@ const cron = require('node-cron');
 const User = require('./models/User');
 
 dotenv.config();
-connectDB();
 
+// Initialize App
 const app = express();
 
-app.use(cors());
+// Connect Database
+connectDB();
+
+// --- MIDDLEWARES ---
+app.use(cors({
+  origin: [
+    "http://localhost:3000", 
+    "https://tera-frontend-name.onrender.com"
+  ], 
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"]
+}));
+
 app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-cron.schedule('0 0 * * *', async () => {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    const users = await User.find({});
-    
-    for (let user of users) {
-      if (user.lastSolveDate !== today) {
-        user.points = Math.max(0, user.points - 5); 
-        user.streak = 0; 
-        await user.save();
-      }
-    }
-    console.log('Daily maintenance finished.');
-  } catch (err) {
-    console.error('Cron Job Error:', err);
-  }
-});
-
-// Routes
+// --- ROUTES ---
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/problems', require('./routes/problemRoutes'));
@@ -42,5 +36,31 @@ app.get('/', (req, res) => {
   res.send('AlgoPulse API is running...');
 });
 
+// --- CRON JOB ---
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    await User.updateMany(
+      { lastSolveDate: { $ne: today } },
+      { 
+        $inc: { points: -5 }, 
+        $set: { streak: 0 } 
+      }
+    );
+
+    await User.updateMany(
+      { points: { $lt: 0 } },
+      { $set: { points: 0 } }
+    );
+
+    console.log('Daily maintenance: Streaks reset and penalties applied.');
+  } catch (err) {
+    console.error('Cron Job Error:', err);
+  }
+});
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});

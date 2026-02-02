@@ -14,7 +14,8 @@ const ProgressDashboard = () => {
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
-  // Badge Configuration (Frontend par display ke liye)
+  const BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+
   const allPossibleBadges = [
     { name: "7-Day Streak", desc: "Consistency for a week", type: 'streak' },
     { name: "Monthly Warrior", desc: "30 days of dedication", type: 'streak' },
@@ -32,7 +33,7 @@ const ProgressDashboard = () => {
   const fetchUserData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/users/profile', {
+      const res = await axios.get(`${BASE_URL}/api/users/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUser(res.data); 
@@ -41,7 +42,7 @@ const ProgressDashboard = () => {
 
   const fetchPOTD = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/problems/latest');
+      const res = await axios.get(`${BASE_URL}/api/problems/latest`);
       setPotd(res.data);
     } catch (err) { console.error(err); }
   };
@@ -50,7 +51,7 @@ const ProgressDashboard = () => {
     setIsSyncing(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.get('http://localhost:5000/api/users/sync', { headers: { Authorization: `Bearer ${token}` } });
+      await axios.get(`${BASE_URL}/api/users/sync`, { headers: { Authorization: `Bearer ${token}` } });
       await fetchUserData(); 
     } catch (err) { alert("Sync Failed."); } finally { setIsSyncing(false); }
   };
@@ -64,7 +65,7 @@ const ProgressDashboard = () => {
       const base64Image = reader.result;
       try {
         const token = localStorage.getItem('token');
-        await axios.post('http://localhost:5000/api/users/update-avatar', { profilePic: base64Image }, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.post(`${BASE_URL}/api/users/update-avatar`, { profilePic: base64Image }, { headers: { Authorization: `Bearer ${token}` } });
         setUser({ ...user, profilePic: base64Image });
       } catch (err) { alert("Update Failed"); }
     };
@@ -163,7 +164,7 @@ const ProgressDashboard = () => {
           <StatItem icon={<Award size={20}/>} label="Neural Points" value={user.points || 0} sub="Protocol Rank: Elite" />
         </section>
 
-        {/* --- BADGES (ACHIEVEMENT VAULT) --- */}
+        {/* --- BADGES --- */}
         <section className="mb-24">
           <div className="mb-12">
             <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2 flex items-center gap-3">
@@ -196,19 +197,13 @@ const ProgressDashboard = () => {
                       {badge.desc}
                     </p>
                   </div>
-                  {isEarned && (
-                    <motion.div 
-                      layoutId="glow"
-                      className="absolute inset-0 rounded-3xl bg-cyan-500/5 blur-xl -z-10"
-                    />
-                  )}
                 </motion.div>
               );
             })}
           </div>
         </section>
 
-       {/* --- CONTENT SPLIT: Skills & Heatmap --- */}
+        {/* --- CONTENT SPLIT (PROGRESS & TOPICS) --- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-start">
           <section className="space-y-12">
             <div>
@@ -224,7 +219,6 @@ const ProgressDashboard = () => {
               <SleekProgress label="Hard" color="bg-red-500" percent={(user.stats?.hardSolved / (user.stats?.totalSolved || 1)) * 100} />
             </div>
 
-            {/* --- TOPICS SECTION  --- */}
             <div className="pt-12 border-t border-white/5 mt-12">
               <p className="text-[10px] font-black uppercase text-slate-600 tracking-widest mb-6 italic">Top_Neural_Specializations</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -238,7 +232,6 @@ const ProgressDashboard = () => {
                           <span className="text-[10px] font-mono text-cyan-500">{perc}%</span>
                         </div>
                         <h4 className="text-xl font-black text-white italic relative z-10">{t.solved} <span className="text-[8px] text-slate-600 uppercase">Solved</span></h4>
-                        {/* Subtle  */}
                         <div className="absolute bottom-0 left-0 h-1 bg-cyan-500/20" style={{ width: `${perc}%` }} />
                       </div>
                     );
@@ -250,16 +243,15 @@ const ProgressDashboard = () => {
             </div>
           </section>
 
- {/* --- HEATMAP SECTION --- */}
-           <section>
+          <section>
              <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-8 flex items-center gap-3">
                <Calendar className="text-cyan-500" size={24} /> Neural_Activity
-              </h2>
-              <div className="bg-white/[0.02] p-8 rounded-[2rem] border border-white/5 overflow-x-auto">
+             </h2>
+             <div className="bg-white/[0.02] p-8 rounded-[2rem] border border-white/5 overflow-x-auto">
                 <div className="flex gap-1.5 min-w-[400px]">
                   {[...Array(24)].map((_, i) => (
-                   <div key={i} className="flex flex-col gap-1.5">
-                     {[...Array(7)].map((_, j) => {
+                    <div key={i} className="flex flex-col gap-1.5">
+                      {[...Array(7)].map((_, j) => {
                         const d = new Date();
                         d.setDate(d.getDate() - (23 - i) * 7 - (6 - j));
                         const dateStr = d.toISOString().split('T')[0];
@@ -277,18 +269,18 @@ const ProgressDashboard = () => {
                             className={`w-3 h-3 rounded-[3px] border transition-all ${isActive ? 'bg-cyan-500 border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]' : 'bg-white/5 border-white/5'}`} 
                           />
                         );
-                     })}
-                   </div>
-                 ))}
-               </div>
+                      })}
+                    </div>
+                  ))}
+                </div>
              </div>
           </section>
         </div>
-
       </main>
 
+      {/* Floating Sync Button */}
       <div className="fixed bottom-10 right-10 z-[100]">
-        <button onClick={handleSync} disabled={isSyncing} className="bg-white p-6 rounded-full text-black hover:bg-cyan-500 transition-colors shadow-2xl active:scale-95 transition-transform">
+        <button onClick={handleSync} disabled={isSyncing} className="bg-white p-6 rounded-full text-black hover:bg-cyan-500 transition-colors shadow-2xl active:scale-95">
           <RefreshCcw size={24} className={isSyncing ? 'animate-spin' : ''} />
         </button>
       </div>
@@ -318,5 +310,3 @@ const SleekProgress = ({ label, color, percent }) => (
 );
 
 export default ProgressDashboard;
-
-

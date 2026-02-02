@@ -1,4 +1,3 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -111,7 +110,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ================= HOW IT WORKS: RANKING LOGIC ================= */}
+      {/* ================= HOW IT WORKS ================= */}
       <section className="max-w-7xl mx-auto px-6 py-32 relative z-10 border-t border-white/5">
         <div className="text-center mb-20">
           <div className="flex items-center justify-center gap-2 mb-4 bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20 w-fit mx-auto">

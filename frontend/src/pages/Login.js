@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
@@ -8,34 +7,37 @@ import { Mail, Lock, LogIn, Fingerprint, Activity, Loader2 } from "lucide-react"
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // Fast feedback state
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setIsLoading(true); // Instant feedback start
+    setIsLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", { email, password });
+      const res = await axios.post(`${BASE_URL}/api/auth/login`, { email, password });
+      
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      
       navigate("/dashboard");
     } catch (err) {
-      alert("Neural Link Failed: Credentials Mismatch ❌");
+      console.error("Authentication failed:", err);
+      alert(err.response?.data?.message || "Neural Link Failed: Credentials Mismatch ❌");
     } finally {
-      setIsLoading(false); // Stop loading
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen w-full bg-[#020408] flex justify-center px-6 relative overflow-hidden">
-      
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-5%] left-[-5%] w-[40%] h-[40%] bg-blue-600/[0.03] blur-[120px] rounded-full" />
         <div className="absolute bottom-[-5%] right-[-5%] w-[40%] h-[40%] bg-purple-600/[0.03] blur-[120px] rounded-full" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.12] mix-blend-overlay" />
       </div>
 
-      {/* --- POSITIONED CARD --- */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -43,15 +45,12 @@ const Login = () => {
         className="w-full max-w-[370px] pt-[22vh] relative z-10" 
       >
         <div className="bg-white/[0.01] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
-          
-          {/* Scanning Animation */}
           <motion.div 
             animate={{ top: ["-10%", "110%"] }}
             transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
             className="absolute left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent z-0"
           />
 
-          {/* Card Header */}
           <div className="flex flex-col items-center mb-8 relative z-10">
             <div className="w-12 h-12 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl flex items-center justify-center mb-4">
               <Fingerprint className="text-cyan-400" size={24} />
@@ -63,7 +62,6 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Input Fields */}
           <form onSubmit={handleLogin} className="space-y-4 relative z-10">
             <div className="relative group">
               <Mail size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-cyan-500 transition-colors" />
@@ -102,7 +100,6 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Card Footer */}
           <div className="mt-8 text-center border-t border-white/5 pt-6">
             <Link
               to="/register"
@@ -111,12 +108,6 @@ const Login = () => {
               New_Node? <span className="text-slate-400 underline decoration-cyan-500/30">Create_Access</span>
             </Link>
           </div>
-        </div>
-
-        {/* Floating Metadata */}
-        <div className="mt-8 flex justify-between items-center px-6 opacity-20">
-            <span className="text-[7px] font-black text-slate-500 tracking-[0.3em] italic uppercase">SECURED_ACCESS</span>
-            <span className="text-[7px] font-black text-slate-500 tracking-[0.3em] italic uppercase">CORE_V5.0</span>
         </div>
       </motion.div>
     </div>

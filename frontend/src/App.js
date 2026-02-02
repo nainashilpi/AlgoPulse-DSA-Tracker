@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; 
 import { Toaster } from 'react-hot-toast'; 
 import ScrollToTop from './components/ScrollToTop';
 
@@ -13,6 +13,17 @@ import Admin from './pages/Admin';
 import Resources from './pages/Resources';
 import Footer from "./components/Footer";
 
+// 🔥 PROTECTED ROUTE LOGIC
+const ProtectedAdminRoute = ({ children }) => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isAdmin = user && user.role && user.role.toLowerCase() === "admin";
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
+
 function App() {
   return (
     <Router>
@@ -22,23 +33,25 @@ function App() {
         position="bottom-right" 
         toastOptions={{
           style: {
-            background: '#0a0f1a',
+            background: '#020408',
             color: '#fff',
-            border: '1px solid rgba(255,255,255,0.1)',
-            fontSize: '12px',
-            fontFamily: 'sans-serif',
-            borderRadius: '12px'
+            border: '1px solid rgba(255,255,255,0.05)',
+            fontSize: '11px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            borderRadius: '12px',
+            backdropFilter: 'blur(10px)'
           },
           success: {
             iconTheme: {
-              primary: '#22d3ee',
+              primary: '#06b6d4',
               secondary: '#000',
             },
           },
         }}
       />
       
-      <div className="min-h-screen bg-[#05070a]">
+      <div className="min-h-screen bg-[#020408] selection:bg-cyan-500/30">
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -46,8 +59,18 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/admin" element={<Admin />} />
           <Route path="/resources" element={<Resources />} />
+
+          {/* 🔥 ADMIN ROUTE NOW PROTECTED */}
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedAdminRoute>
+                <Admin />
+              </ProtectedAdminRoute>
+            } 
+          />
+          
         </Routes>
         <Footer />
       </div>

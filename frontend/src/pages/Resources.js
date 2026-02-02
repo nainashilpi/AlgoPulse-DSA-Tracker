@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -163,7 +162,7 @@ const Resources = () => {
             { t: "Codeforces", d: "Intense logical rounds weekly.", tg: "Legendary", i: Code2, l: "https://codeforces.com/contests" },
             { t: "CodeChef", d: "Wednesday Starters @ 8:00 PM IST.", tg: "Consistent", i: Star, l: "https://www.codechef.com/contests" }
           ].map((item, i) => (
-            <motion.a href={item.l} key={i} target="_blank" className="group relative">
+            <motion.a href={item.l} key={i} target="_blank" rel="noreferrer" className="group relative">
               <div className="relative p-8 bg-white/[0.01] border border-white/5 border-b-2 border-b-cyan-500/10 rounded-[2rem] hover:border-b-cyan-500/50 transition-all duration-500">
                 <div className="flex justify-between items-center mb-6">
                   <item.i className="text-cyan-400 group-hover:scale-110 transition-transform" size={20} />
@@ -177,83 +176,45 @@ const Resources = () => {
         </div>
       </Section>
 
- {/* --- 06. INTERVIEW LOGS --- */}
-<Section title="Interview_Logs" subtitle="Fresher & Intern Experiences." icon={Briefcase}>
-  <div className="space-y-3">
-    {[
-      { 
-        c: "Microsoft", 
-        l: "SWE Intern / Explore Program", 
-        d: "Focus on Strings, Arrays, and System Design basics. Multiple technical rounds.", 
-        s: "Hard", 
-        link: "https://www.youtube.com/watch?v=kOJwuRhHZKI" 
-      },
-      { 
-        c: "Google", 
-        l: "STEP Intern / New Grad", 
-        d: "Heavy focus on Graphs, Trees and clean coding practices.", 
-        s: "Hard", 
-        link: "https://www.youtube.com/watch?v=Yxjh3QBS0_E&t=1433s" 
-      },
-      { 
-        c: "Amazon", 
-        l: "SDE Intern / 6-Month", 
-        d: "Hiring via Campus or Off-campus. Leadership Principles are key.", 
-        s: "Medium-Hard", 
-        link: "https://www.youtube.com/watch?v=vscu3i1_yxs" 
-      },
-      { 
-        c: "JpMorgan", 
-        l: "SDE-1", 
-        d: "Hiring via Off-campus.", 
-        s: "Medium-Hard", 
-        link: "https://www.youtube.com/watch?v=Q_mSKYgWtio" 
-      }
-    ].map((exp, i) => (
-      // Link wrapper added around each card
-      <Link to={exp.link} key={i} className="block group">
-        <motion.div className="p-6 px-10 bg-white/[0.01] border border-white/5 rounded-[1.5rem] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:border-cyan-500/20 transition-all cursor-pointer">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <span className="text-cyan-400 font-black italic uppercase text-lg group-hover:tracking-widest transition-all duration-500">
-                {exp.c}
-              </span>
-              <span className="text-[8px] px-2 py-0.5 bg-white/5 rounded text-slate-600 font-black uppercase tracking-tighter">
-                {exp.l}
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
-              {exp.d}
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-[10px] font-black text-cyan-500 uppercase italic tracking-widest">
-              {exp.s}
-            </div>
-            {/* Arrow icon to indicate it's a link */}
-            <ArrowRight size={14} className="text-slate-700 group-hover:text-cyan-500 transition-colors" />
-          </div>
-        </motion.div>
-      </Link>
-    ))}
-  </div>
-</Section>
+      {/* --- 06. INTERVIEW LOGS --- */}
+      <Section title="Interview_Logs" subtitle="Fresher & Intern Experiences." icon={Briefcase}>
+        <div className="space-y-3">
+          {[
+            { c: "Microsoft", l: "SWE Intern / Explore Program", d: "Focus on Strings, Arrays, and System Design basics.", s: "Hard", link: "https://www.youtube.com/watch?v=kOJwuRhHZKI" },
+            { c: "Google", l: "STEP Intern / New Grad", d: "Heavy focus on Graphs, Trees and clean coding practices.", s: "Hard", link: "https://www.youtube.com/watch?v=Yxjh3QBS0_E" },
+            { c: "Amazon", l: "SDE Intern / 6-Month", d: "Hiring via Campus or Off-campus. Leadership Principles are key.", s: "Medium-Hard", link: "https://www.youtube.com/watch?v=vscu3i1_yxs" },
+            { c: "JpMorgan", l: "SDE-1", d: "Hiring via Off-campus hiring challenges.", s: "Medium-Hard", link: "https://www.youtube.com/watch?v=Q_mSKYgWtio" }
+          ].map((exp, i) => (
+            <motion.a href={exp.link} key={i} target="_blank" rel="noreferrer" className="block group">
+              <div className="p-6 px-10 bg-white/[0.01] border border-white/5 rounded-[1.5rem] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:border-cyan-500/20 transition-all cursor-pointer">
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="text-cyan-400 font-black italic uppercase text-lg group-hover:tracking-widest transition-all duration-500">{exp.c}</span>
+                    <span className="text-[8px] px-2 py-0.5 bg-white/5 rounded text-slate-600 font-black uppercase tracking-tighter">{exp.l}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">{exp.d}</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-[10px] font-black text-cyan-500 uppercase italic tracking-widest">{exp.s}</div>
+                  <ArrowRight size={14} className="text-slate-700 group-hover:text-cyan-500 transition-colors" />
+                </div>
+              </div>
+            </motion.a>
+          ))}
+        </div>
+      </Section>
 
       {/* --- 07. BEYOND CODING --- */}
       <Section title="Beyond_Coding" subtitle="The Professional Edge." icon={Mic2}>
         <div className="grid md:grid-cols-2 gap-12 ml-4 md:ml-16">
           <div className="space-y-12">
             {[
-              { t: "Aptitude & Logic", d: "Don't let the first filter stop you. Master Quantitative, Verbal, and Logical Reasoning. Companies use this to filter 80% of applicants.", i: Brain },
-              { t: "Communication", d: "The ability to explain your 'approach' is more important than the code. Practice STAR method for behavioral questions.", i: Mic2 },
-              { t: "LinkedIn & Networking", d: "Your profile is your digital CV. Connect with seniors, share your learning daily, and build a network that brings referrals.", i: Users },
-              { t: "Hackathons & Events", d: "Participation in SIH or MLH proves you can build under pressure. It's a huge green flag for top-tier recruiters.", i: Rocket }
+              { t: "Aptitude & Logic", d: "Don't let the first filter stop you. Master Quantitative, Verbal, and Logical Reasoning.", i: Brain },
+              { t: "Communication", d: "The ability to explain your 'approach' is more important than the code.", i: Mic2 },
+              { t: "LinkedIn & Networking", d: "Your profile is your digital CV. Connect with seniors and share your learning daily.", i: Users },
+              { t: "Hackathons & Events", d: "Participation in SIH or MLH proves you can build under pressure.", i: Rocket }
             ].map((item, idx) => (
-              <motion.div 
-                key={idx} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} 
-                transition={{ delay: idx * 0.1 }}
-                className="relative group cursor-default"
-              >
+              <motion.div key={idx} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.1 }} className="relative group cursor-default">
                 <div className="absolute -left-6 top-1 w-[1px] h-0 bg-cyan-500 group-hover:h-full transition-all duration-500" />
                 <h4 className="text-xl font-black text-white italic uppercase mb-2 flex items-center gap-3">
                    <item.i size={18} className="text-cyan-400" /> {item.t}
@@ -263,13 +224,8 @@ const Resources = () => {
             ))}
           </div>
 
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }}
-            className="bg-white/[0.01] border border-white/5 p-10 rounded-[2.5rem] relative overflow-hidden flex flex-col justify-center backdrop-blur-3xl"
-          >
-            <div className="absolute -right-10 -top-10 opacity-[0.03]">
-              <ShieldCheck size={200} className="text-cyan-500" />
-            </div>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} className="bg-white/[0.01] border border-white/5 p-10 rounded-[2.5rem] relative overflow-hidden flex flex-col justify-center backdrop-blur-3xl">
+            <div className="absolute -right-10 -top-10 opacity-[0.03]"><ShieldCheck size={200} className="text-cyan-500" /></div>
             <h4 className="text-xl font-black text-white italic uppercase mb-8 tracking-tighter">Placement_Checklist</h4>
             <div className="space-y-8 relative z-10">
               {[
@@ -289,31 +245,18 @@ const Resources = () => {
 
       {/* --- MOTIVATION --- */}
       <section className="max-w-5xl mx-auto px-6 my-48">
-        <motion.div 
-          initial="hidden" whileInView="visible" viewport={{ once: true }}
-          variants={{ visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
-          className="relative border-y border-white/5 py-24 flex flex-col items-center"
-        >
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={{ visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }} className="relative border-y border-white/5 py-24 flex flex-col items-center">
           <motion.div variants={fadeInUp} className="flex items-center gap-4 mb-12">
             <div className="h-[1px] w-12 bg-white/10" />
-            <div className="p-2.5 bg-cyan-500/10 rounded-full">
-              <Cpu className="text-cyan-500" size={20} />
-            </div>
+            <div className="p-2.5 bg-cyan-500/10 rounded-full"><Cpu className="text-cyan-500" size={20} /></div>
             <h2 className="text-4xl md:text-6xl font-black text-white uppercase italic tracking-tighter leading-none">
               Roz thoda sa <span className="text-cyan-500">code...</span>
             </h2>
             <div className="h-[1px] w-12 bg-white/10" />
           </motion.div>
-
           <motion.div variants={fadeInUp} className="text-center max-w-3xl">
             <p className="text-base md:text-xl font-bold text-slate-500 uppercase tracking-widest italic leading-relaxed">
               "Bas rukna mat. Aaj ka <span className="text-white">ek question</span> tumhare kal ka placement fix karega."
-            </p>
-          </motion.div>
-
-          <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 4, repeat: Infinity }} className="mt-12 px-4 py-1.5 border border-white/5 rounded-full bg-white/[0.02]">
-            <p className="text-[8px] font-black text-slate-700 uppercase tracking-[0.4em] italic flex items-center gap-2">
-              <Sparkles size={10} className="text-cyan-500" /> Rukna mat, kyunki tum abhi seekh rahe ho.
             </p>
           </motion.div>
         </motion.div>
@@ -321,11 +264,9 @@ const Resources = () => {
 
       {/* --- FOOTER --- */}
       <footer className="max-w-7xl mx-auto px-6 py-20 border-t border-white/5 text-center">
-        <div className="inline-block relative">
-          <p className="relative text-lg font-black text-white uppercase italic tracking-tighter">
-            Architected by <span className="text-cyan-500">Naina Shilpi</span> // Undergrid_Systems
-          </p>
-        </div>
+        <p className="text-lg font-black text-white uppercase italic tracking-tighter">
+          Architected by <span className="text-cyan-500">Naina Shilpi</span> // Undergrid_Systems
+        </p>
         <p className="text-[8px] font-black text-slate-700 uppercase tracking-[0.4em] mt-4">Secure_Archive_V5.0 // Built for Excellence</p>
       </footer>
     </div>

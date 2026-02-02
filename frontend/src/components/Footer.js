@@ -1,4 +1,3 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { Github, Linkedin, Mail, Zap, ArrowUpRight, Instagram } from "lucide-react";
@@ -7,7 +6,6 @@ import { Link } from "react-router-dom";
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
-  // Social Links Data
   const socials = [
     { icon: <Github size={16} />, url: "https://github.com/nainashilpi" },
     { icon: <Linkedin size={16} />, url: "https://www.linkedin.com/in/nainashilpi" },
@@ -16,7 +14,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="relative bg-[#05070a] border-t border-white/5 pt-16 pb-8 overflow-hidden selection:bg-cyan-500/30">
+    <footer className="relative bg-[#020408] border-t border-white/5 pt-16 pb-8 overflow-hidden selection:bg-cyan-500/30">
       
       {/* --- SUBTLE NEURAL GLOW --- */}
       <div className="absolute inset-0 pointer-events-none">
@@ -26,7 +24,6 @@ const Footer = () => {
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
-        {/* --- TOP SECTION: COMPACT GRID --- */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pb-12 border-b border-white/[0.03]">
           
           {/* Brand Identity */}
@@ -94,12 +91,12 @@ const Footer = () => {
             <div className="col-span-2 md:col-span-1">
                <div className="p-5 rounded-2xl bg-white/[0.01] border border-white/5 relative group overflow-hidden">
                   <p className="text-[9px] font-black text-white mb-2 uppercase tracking-widest">Neural_Brief</p>
-                  <div className="flex items-center bg-[#0a0f1a] border border-white/5 rounded-lg overflow-hidden focus-within:border-cyan-500/30 transition-all">
+                  <form className="flex items-center bg-[#0a0f1a] border border-white/5 rounded-lg overflow-hidden focus-within:border-cyan-500/30 transition-all">
                     <input type="email" placeholder="NODE_ID" className="bg-transparent w-full px-3 py-2 text-[8px] font-bold text-white outline-none" />
-                    <button className="p-2 bg-white text-black hover:bg-cyan-500 transition-colors">
+                    <button type="button" className="p-2 bg-white text-black hover:bg-cyan-500 transition-colors">
                       <ArrowUpRight size={14} />
                     </button>
-                  </div>
+                  </form>
                </div>
             </div>
           </div>
@@ -128,6 +125,7 @@ const Footer = () => {
                  src="/naina-profile.jpg" 
                  alt="Naina" 
                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" 
+                 onError={(e) => e.target.src="https://ui-avatars.com/api/?name=Naina+Shilpi&background=0D0D0D&color=06b6d4"}
                />
             </div>
           </motion.div>

@@ -23,21 +23,38 @@ const fetchLeetCodeStats = async (handle) => {
   `;
 
   try {
-    const response = await axios.post('https://leetcode.com/graphql', {
-      query: query,
-      variables: { username: handle }
-    });
+    const response = await axios.post(
+      'https://leetcode.com/graphql', 
+      {
+        query: query,
+        variables: { username: handle }
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+          'Referer': 'https://leetcode.com/'
+        },
+        timeout: 10000 // 10 seconds timeout for stability
+      }
+    );
+
+    // Safety check for GraphQL errors
+    if (response.data.errors) {
+      console.error("LeetCode User Not Found or Restricted:", handle);
+      return null;
+    }
 
     const data = response.data.data.matchedUser;
     if (!data) return null;
 
     const stats = data.submitStats.acSubmissionNum;
     
-    // Consolidate all difficulty tags into a single array
+    // Consolidate all difficulty tags into a single array with optional chaining
     const allTags = [
-      ...data.tagProblemCounts.fundamental,
-      ...data.tagProblemCounts.intermediate,
-      ...data.tagProblemCounts.advanced
+      ...(data.tagProblemCounts?.fundamental || []),
+      ...(data.tagProblemCounts?.intermediate || []),
+      ...(data.tagProblemCounts?.advanced || [])
     ];
 
     // Sort by most problems solved and pick the Top 9
@@ -58,7 +75,7 @@ const fetchLeetCodeStats = async (handle) => {
       topics: sortedTopics 
     };
   } catch (error) {
-    console.error("LeetCode Fetch Error:", error.message);
+    console.error(`LeetCode Fetch Error (${handle}):`, error.message);
     return null;
   }
 };

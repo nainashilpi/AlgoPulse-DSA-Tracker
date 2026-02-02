@@ -1,4 +1,3 @@
-
 const User = require('../models/User');
 const { fetchLeetCodeStats } = require('../utils/syncStats.js');
 
@@ -7,16 +6,18 @@ exports.getLeaderboard = async (req, res) => {
   try {
     const users = await User.find({})
       .sort({ points: -1 })
-      .select('-password');
+      .select('-password')
+      .lean(); // .lean() performance ke liye aur objects ko modify karne ke liye best hai
     
     // Index ke base par rank add karna
     const rankedUsers = users.map((u, index) => ({
-      ...u._doc,
+      ...u,
       rank: index + 1
     }));
 
     res.status(200).json(rankedUsers);
   } catch (err) {
+    console.error("Leaderboard Error:", err.message);
     res.status(500).json({ message: "Error fetching leaderboard" });
   }
 };
@@ -25,6 +26,7 @@ exports.getLeaderboard = async (req, res) => {
 exports.getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
+    if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (err) {
     res.status(500).json({ message: "Server Error" });
@@ -35,6 +37,7 @@ exports.getUserProfile = async (req, res) => {
 exports.syncStats = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User node not found" });
     
     // GraphQL Helper se data fetch karna
     const leetData = await fetchLeetCodeStats(user.leetcodeHandle);
@@ -55,12 +58,15 @@ exports.syncStats = async (req, res) => {
 
       // Streak Logic
       const today = new Date().toISOString().split('T')[0];
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const yesterdayDate = new Date();
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
 
-      if (user.lastSolveDate === yesterdayStr) user.streak += 1;
-      else if (user.lastSolveDate !== today) user.streak = 1;
+      if (user.lastSolveDate === yesterdayStr) {
+        user.streak += 1;
+      } else if (user.lastSolveDate !== today) {
+        user.streak = 1;
+      }
 
       user.lastSolveDate = today;
     }
@@ -73,14 +79,13 @@ exports.syncStats = async (req, res) => {
       totalSolved: leetData.totalSolved
     };
 
-    user.topics = leetData.topics; // Dashboard ke topics yahan se ayenge
+    user.topics = leetData.topics;
 
     // --- BADGES ENGINE ---
-    const earnedBadges = [...user.badges];
+    let earnedBadges = [...user.badges];
     const total = leetData.totalSolved;
     const currentStreak = user.streak || 0;
 
-    // Milestone Check
     const badgesConfig = [
       { t: 50, n: "50 Solver" }, { t: 100, n: "Centurion" }, { t: 500, n: "LeetCode Legend" },
       { d: 7, n: "7-Day Streak" }, { d: 30, n: "Monthly Warrior" }, { d: 100, n: "Consistent King" }
@@ -96,14 +101,19 @@ exports.syncStats = async (req, res) => {
     // --- HEATMAP UPDATE ---
     const todayStr = new Date().toISOString().split('T')[0];
     const hIndex = user.dailyHistory.findIndex(h => h.date === todayStr);
-    if (hIndex > -1) user.dailyHistory[hIndex].count = total;
-    else user.dailyHistory.push({ date: todayStr, count: total });
+    
+    // Count ko safely update karna
+    if (hIndex > -1) {
+      user.dailyHistory[hIndex].count = total;
+    } else {
+      user.dailyHistory.push({ date: todayStr, count: total });
+    }
 
     await user.save();
     res.json({ message: "Sync Successful!", user });
 
   } catch (err) {
-    console.error("Sync Controller Error:", err);
+    console.error("Sync Controller Error:", err.message);
     res.status(500).json({ message: "Internal Server Error during sync" });
   }
 };
@@ -114,8 +124,11 @@ exports.updateAvatar = async (req, res) => {
         const user = await User.findByIdAndUpdate(
           req.user._id, 
           { profilePic: req.body.profilePic }, 
-          { new: true }
-        );
+          { new: true, runValidators: true }
+        ).select('-password');
         res.json(user);
-    } catch (err) { res.status(500).json({ message: "Update Failed" }); }
+    } catch (err) { 
+        console.error("Avatar Update Error:", err.message);
+        res.status(500).json({ message: "Update Failed" }); 
+    }
 };

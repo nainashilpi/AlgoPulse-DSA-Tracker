@@ -3,6 +3,11 @@ const router = express.Router();
 const Notification = require('../models/Notification');
 const { protect, admin } = require('../middleware/authMiddleware');
 
+/**
+ * @route   POST /api/notifications/create
+ * @desc    Core Access: Broadcast system-wide notification
+ * @access  Private/Admin
+ */
 router.post('/create', protect, admin, async (req, res) => {
   try {
     const { message, type } = req.body;
@@ -11,7 +16,6 @@ router.post('/create', protect, admin, async (req, res) => {
     }
     const notification = await Notification.create({ 
       message, 
-      // Matching with updated enum
       type: type || 'Update' 
     });
     res.status(201).json(notification);
@@ -21,6 +25,11 @@ router.post('/create', protect, admin, async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/notifications
+ * @desc    Get latest system signals
+ * @access  Public
+ */
 router.get('/', async (req, res) => {
   try {
     const notifications = await Notification.find().sort({ createdAt: -1 }).limit(5);
@@ -30,16 +39,22 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Route to delete a notification
-router.delete('/:id', protect, admin, async (req, res) => {
+/**
+ * @route   DELETE /api/notifications/:id
+ * @desc    Terminate a specific notification signal
+ * @access  Private
+ */
+router.delete('/:id', protect, async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
     if (!notification) {
       return res.status(404).json({ message: "Notification not found" });
     }
-    await notification.deleteOne();
+    
+    await Notification.findByIdAndDelete(req.params.id);
     res.json({ message: "Signal Terminated Successfully" });
   } catch (error) {
+    console.error("Delete Notif Error:", error.message);
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 });

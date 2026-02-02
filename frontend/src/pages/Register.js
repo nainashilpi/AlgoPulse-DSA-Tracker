@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
@@ -15,14 +14,18 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  const BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true); 
     try {
-      await axios.post("http://localhost:5000/api/auth/register", formData);
+      await axios.post(`${BASE_URL}/api/auth/register`, formData);
+      
       alert("Registration successful! Access granted.");
       navigate("/login");
     } catch (err) {
+      console.error("Auth Error:", err.response?.data);
       alert(err.response?.data?.message || "Registration failed ❌");
     } finally {
       setIsLoading(false);
@@ -31,7 +34,6 @@ const Register = () => {
 
   return (
     <div className="min-h-screen w-full bg-[#020408] flex justify-center px-6 relative overflow-hidden">
-      
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-5%] left-[-5%] w-[40%] h-[40%] bg-blue-600/[0.03] blur-[120px] rounded-full" />
         <div className="absolute bottom-[-5%] right-[-5%] w-[40%] h-[40%] bg-purple-600/[0.03] blur-[120px] rounded-full" />
@@ -42,18 +44,16 @@ const Register = () => {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-[370px] pt-[20vh] pb-20 relative z-10" // pt-[20vh] for balanced spacing
+        className="w-full max-w-[370px] pt-[20vh] pb-20 relative z-10"
       >
         <div className="bg-white/[0.01] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
           
-          {/* Scanning Animation */}
           <motion.div 
             animate={{ top: ["-10%", "110%"] }}
             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
             className="absolute left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent z-0"
           />
 
-          {/* Card Header */}
           <div className="flex flex-col items-center mb-8 relative z-10">
             <div className="w-12 h-12 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl flex items-center justify-center mb-4">
               <UserPlus className="text-cyan-400" size={24} />
@@ -65,9 +65,7 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Input Fields */}
           <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
-            
             <div className="relative group">
               <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-cyan-500 transition-colors" />
               <input
@@ -125,7 +123,6 @@ const Register = () => {
             </button>
           </form>
 
-          {/* Footer */}
           <div className="mt-8 text-center border-t border-white/5 pt-6">
             <Link
               to="/login"
@@ -134,12 +131,6 @@ const Register = () => {
               Existing_Node? <span className="text-slate-400 underline decoration-cyan-500/30">Sync_Now</span>
             </Link>
           </div>
-        </div>
-
-        {/* Floating Metadata */}
-        <div className="mt-8 flex justify-between items-center px-6 opacity-20">
-            <span className="text-[7px] font-black text-slate-500 tracking-[0.3em] italic uppercase">NODE_IDENT_V5.0</span>
-            <span className="text-[7px] font-black text-slate-500 tracking-[0.3em] italic uppercase">CYBER_SECURED</span>
         </div>
       </motion.div>
     </div>

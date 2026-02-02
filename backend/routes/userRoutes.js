@@ -42,10 +42,16 @@ router.post('/update-avatar', protect, userController.updateAvatar);
  * @desc    Delete a user node from the system
  * @access  Private/Admin
  */
+// Protect pehle hona chahiye, admin baad mein
 router.delete('/:id', protect, admin, async (req, res) => {
     try {
-        await User.findByIdAndDelete(req.params.id);
-        res.json({ message: "User deleted! 🗑️" });
+        const user = await User.findById(req.params.id);
+        if (user) {
+            await User.findByIdAndDelete(req.params.id);
+            res.json({ message: "User deleted! 🗑️" });
+        } else {
+            res.status(404).json({ message: "User not found" });
+        }
     } catch (error) {
         res.status(500).json({ message: "Delete error" });
     }

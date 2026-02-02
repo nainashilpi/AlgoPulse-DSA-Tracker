@@ -2,21 +2,33 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken'); 
 
+/**
+ * @desc    Register a new user
+ * @access  Public
+ */
 exports.register = async (req, res) => {
+  // DEBUG: Check if data reaches backend
+  console.log("📥 Registration hit with data:", req.body);
+
   try {
     const { name, email, password, leetcodeHandle } = req.body;
 
-    // Check if user already exists
+    // Validation
+    if (!name || !email || !password || !leetcodeHandle) {
+       return res.status(400).json({ message: "Bhai, saari details bharna zaroori hai!" });
+    }
+
+    // Check existing user
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Hash Password (Security)
+    // Hash Password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create New User
+    // Create User
     user = new User({
       name,
       email,
@@ -25,43 +37,61 @@ exports.register = async (req, res) => {
     });
 
     await user.save();
+    console.log("✅ User saved successfully in Database!");
     res.status(201).json({ message: "User registered successfully!" });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server Error" });
+    console.error("❌ MONGODB SAVE ERROR:", error.message); 
+    res.status(500).json({ 
+        message: "Server Error during registration", 
+        error: error.message 
+    });
   }
 };
 
+/**
+ * @desc    Login user & get token
+ * @access  Public
+ */
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // 1. Check if user exists
+    
+    // Check user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid Credentials" });
     }
 
-    // 2. Compare Password
+    // Compare Password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid Credentials" });
     }
 
-    // 3. Create & Return JWT Token
+    // Generate JWT
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
       process.env.JWT_SECRET, 
-      { expiresIn: '30d' } // Token valid till 30 days
+      { expiresIn: '30d' }
     );
 
+    // Send Response
     res.json({
       token,
-      user: { id: user._id, name: user.name, role: user.role }
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email,
+        role: user.role,
+        profilePic: user.profilePic,
+        points: user.points,
+        rank: user.rank || "N/A" 
+      }
     });
 
   } catch (error) {
-    res.status(500).json({ message: "Server Error" });
+    console.error("❌ Login Error:", error.message);
+    res.status(500).json({ message: "Server Error during login" });
   }
 };

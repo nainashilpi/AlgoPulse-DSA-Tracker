@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios"; 
 import {
-  Trophy, LogOut, ShieldCheck, BookOpen, Bell, X, Zap, User, Rocket, Clock, Menu, Trash2
+  Trophy, LogOut, ShieldCheck, BookOpen, Bell, X, Zap, User, Clock, Menu, Trash2
 } from "lucide-react";
 
 const Navbar = () => {
@@ -17,7 +16,9 @@ const Navbar = () => {
 
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
-  const isAdmin = user?.role === "Admin";
+  
+  // Admin Check (Case Insensitive)
+  const isAdmin = user && user.role && user.role.toLowerCase() === "admin";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -26,21 +27,20 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, [token]);
 
-  // Notifications Fetch
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/notifications");
+      const baseUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+      const res = await axios.get(`${baseUrl}/api/notifications`);
       setNotifications(res.data);
     } catch (err) {
       console.error("Notif Error:", err);
     }
   };
 
-  // Delete Notification 
   const deleteNotification = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/notifications/${id}`);
-      
+      const baseUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+      await axios.delete(`${baseUrl}/api/notifications/${id}`);
       setNotifications(notifications.filter(n => n._id !== id));
     } catch (err) {
       console.error("Delete Error:", err);
@@ -50,6 +50,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
+    setShowMobileMenu(false);
   };
 
   return (
@@ -66,7 +67,7 @@ const Navbar = () => {
       >
         {/* LOGO */}
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 group-hover:bg-cyan-500 group-hover:text-black transition-all duration-500">
+          <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 group-hover:bg-cyan-500 transition-all duration-500">
             <Zap size={18} className="text-cyan-400 group-hover:text-black" />
           </div>
           <span className="text-lg font-black tracking-tighter text-white uppercase italic">
@@ -74,7 +75,7 @@ const Navbar = () => {
           </span>
         </Link>
 
-        {/* CENTRAL NAV */}
+        {/* DESKTOP CENTRAL NAV */}
         <div className="hidden md:flex items-center gap-2 bg-white/[0.05] p-1.5 rounded-2xl border border-white/5">
           <NavItem to="/leaderboard" icon={<Trophy size={14} />} label="ARENA" active={location.pathname === "/leaderboard"} />
           <NavItem to="/resources" icon={<BookOpen size={14} />} label="RESOURCES" active={location.pathname === "/resources"} />
@@ -87,9 +88,9 @@ const Navbar = () => {
         <div className="flex items-center gap-2 md:gap-4">
           {token ? (
             <div className="flex items-center gap-1 md:gap-3">
-              <button
-                onClick={() => { setShowNotif(!showNotif); fetchNotifications(); }} // Fetch on click for latest data
-                className="relative p-2.5 rounded-xl hover:bg-white/10 transition-colors text-slate-400 hover:text-cyan-400"
+              <button 
+                onClick={() => { setShowNotif(!showNotif); fetchNotifications(); }} 
+                className="relative p-2.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-cyan-400 transition-colors"
               >
                 <Bell size={20} />
                 {notifications.length > 0 && (
@@ -98,36 +99,48 @@ const Navbar = () => {
               </button>
 
               <div className="hidden md:flex items-center gap-2 pl-4 border-l border-white/10">
-                <Link to="/dashboard" className="flex items-center gap-3 group">
-                  <div className="text-right hidden lg:block">
-                    <p className="text-[10px] font-black text-white italic uppercase tracking-tighter leading-none">{user?.name || "Architect"}</p>
-                    <p className="text-[8px] font-bold text-cyan-500/60 uppercase tracking-widest">RANK #{(user?.rank || "??")}</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center overflow-hidden group-hover:border-cyan-500/50 transition-all shadow-inner">
-                    {user?.profilePic ? (
-                      <img src={user.profilePic} className="w-full h-full object-cover" alt="Profile" />
-                    ) : (
-                      <User size={20} className="text-slate-400 group-hover:text-cyan-400" />
-                    )}
-                  </div>
+                <Link to="/dashboard" className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center overflow-hidden hover:border-cyan-500/50 transition-all">
+                  {user?.profilePic ? <img src={user.profilePic} className="w-full h-full object-cover" alt="Profile" /> : <User size={20} className="text-slate-400" />}
                 </Link>
-                <button onClick={handleLogout} className="p-2.5 rounded-xl text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 transition-all"><LogOut size={20} /></button>
+                <button onClick={handleLogout} className="p-2.5 rounded-xl text-slate-500 hover:text-rose-500 transition-all">
+                  <LogOut size={20} />
+                </button>
               </div>
 
-              <button 
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="md:hidden p-2.5 rounded-xl bg-white/5 text-cyan-400 border border-white/5"
-              >
+              {/* MOBILE HAMBURGER */}
+              <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="md:hidden p-2.5 rounded-xl bg-white/5 text-cyan-400 border border-white/5 pointer-events-auto">
                 {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-4">
-              <Link to="/login" className="text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-[0.2em] transition-all italic">LOG_IN</Link>
-              <Link to="/register" className="px-5 py-2 rounded-xl bg-cyan-500 text-black text-[10px] font-black uppercase tracking-[0.2em] italic transition-all">INIT</Link>
+              <Link to="/login" className="text-[10px] font-black text-slate-400 hover:text-white uppercase italic tracking-widest">LOG_IN</Link>
+              <Link to="/register" className="px-5 py-2 rounded-xl bg-cyan-500 text-black text-[10px] font-black uppercase italic tracking-widest">INIT</Link>
             </div>
           )}
         </div>
+
+        {/* MOBILE DRAWER */}
+        <AnimatePresence>
+          {showMobileMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="absolute top-[110%] left-0 right-0 bg-[#0a0f1a]/95 backdrop-blur-3xl border border-white/10 rounded-3xl p-4 md:hidden pointer-events-auto z-[120] flex flex-col gap-2"
+            >
+              <NavItem to="/dashboard" label="MY_PROFILE" active={location.pathname === "/dashboard"} onClick={() => setShowMobileMenu(false)} />
+              <NavItem to="/leaderboard" label="ARENA" active={location.pathname === "/leaderboard"} onClick={() => setShowMobileMenu(false)} />
+              <NavItem to="/resources" label="RESOURCES" active={location.pathname === "/resources"} onClick={() => setShowMobileMenu(false)} />
+              {isAdmin && (
+                <NavItem to="/admin" label="CORE_ACCESS" active={location.pathname === "/admin"} danger onClick={() => setShowMobileMenu(false)} />
+              )}
+              <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-3 text-rose-500 text-[10px] font-black uppercase italic text-left">
+                <LogOut size={14} /> LOGOUT_PROTOCOL
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* NOTIFICATION DROPDOWN */}
         <AnimatePresence>
@@ -149,19 +162,12 @@ const Navbar = () => {
                   {notifications.length > 0 ? (
                     notifications.map((n) => (
                       <div key={n._id} className="relative p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-cyan-500/30 transition-all group overflow-hidden">
-                       
-                        <p className="text-[11px] text-slate-300 font-mono italic leading-relaxed mb-3 pr-6">
-                           {n.message}
-                        </p>
+                        <p className="text-[11px] text-slate-300 font-mono italic leading-relaxed mb-3 pr-6">{n.message}</p>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-[8px] font-black text-slate-600 uppercase tracking-widest italic">
                             <Clock size={10} /> {new Date(n.createdAt).toLocaleDateString()}
                           </div>
-                          {/* Delete Action */}
-                          <button 
-                            onClick={() => deleteNotification(n._id)}
-                            className="text-slate-600 hover:text-rose-500 transition-colors"
-                          >
+                          <button onClick={() => deleteNotification(n._id)} className="text-slate-600 hover:text-rose-500 transition-colors">
                             <Trash2 size={12} />
                           </button>
                         </div>
@@ -185,8 +191,8 @@ const Navbar = () => {
 const NavItem = ({ to, icon, label, active, danger, onClick }) => (
   <Link 
     to={to} 
-    onClick={onClick}
-    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] italic transition-all duration-300 ${active ? "bg-cyan-500 text-black shadow-[0_0_15px_rgba(34,211,238,0.3)]" : danger ? "text-rose-500 hover:bg-rose-500/10" : "text-slate-400 hover:text-white hover:bg-white/10"}`}
+    onClick={onClick} 
+    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] italic transition-all duration-300 ${active ? "bg-cyan-500 text-black shadow-[0_0_15px_rgba(34,211,238,0.3)]" : danger ? "text-rose-500 hover:bg-rose-500/10" : "text-slate-400 hover:text-white hover:bg-white/10"}`}
   >
     {icon}{label}
   </Link>

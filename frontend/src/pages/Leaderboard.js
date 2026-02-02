@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,11 +13,14 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/users/leaderboard");
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/leaderboard`);
         const sorted = (res.data || []).sort((a, b) => (b.points || 0) - (a.points || 0));
         setUsers(sorted);
-      } catch (err) { console.error(err); }
-      finally { setLoading(false); }
+      } catch (err) { 
+        console.error("Critical: Leaderboard sync failed", err); 
+      } finally { 
+        setLoading(false); 
+      }
     };
     fetchLeaderboard();
   }, []);
@@ -38,14 +40,12 @@ const Leaderboard = () => {
   return (
     <div className="relative min-h-screen bg-[#020408] text-slate-300 pb-32 overflow-hidden selection:bg-cyan-500/30 font-sans">
       
-      {/* --- NEURAL BACKGROUND  --- */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-5%] left-[-5%] w-[40%] h-[40%] bg-blue-600/[0.04] blur-[120px] rounded-full" />
         <div className="absolute bottom-[-5%] right-[-5%] w-[40%] h-[40%] bg-purple-600/[0.04] blur-[120px] rounded-full" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.12] mix-blend-overlay" />
       </div>
 
-      {/* --- HERO SECTION --- */}
       <section className="relative pt-32 md:pt-48 pb-16 px-6 text-center z-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
           <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[9px] font-black tracking-[0.4em] text-cyan-400 uppercase mb-8 backdrop-blur-md italic">
@@ -60,7 +60,6 @@ const Leaderboard = () => {
         </motion.div>
       </section>
 
-      {/* --- PODIUM --- */}
       <AnimatePresence>
         {!isSearching && (
           <motion.section exit={{ opacity: 0, y: -20 }} className="relative max-w-6xl mx-auto px-6 mb-32 z-10">
@@ -73,7 +72,6 @@ const Leaderboard = () => {
         )}
       </AnimatePresence>
 
-      {/* --- SEARCH & DATA GRID --- */}
       <section className="relative max-w-5xl mx-auto px-6 z-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 border-b border-white/5 pb-12">
           <div>
@@ -94,9 +92,9 @@ const Leaderboard = () => {
 
         <motion.div initial="hidden" animate="visible" className="space-y-3">
           <AnimatePresence mode="popLayout">
-            {displayList.map((u) => (
+            {displayList.map((u, index) => (
               <motion.div
-                key={u._id}
+                key={u._id || index}
                 layout
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -105,7 +103,7 @@ const Leaderboard = () => {
               >
                 <div className="flex items-center gap-8">
                   <span className="font-black text-[10px] text-slate-700 group-hover:text-cyan-400 transition-colors italic">
-                    #{(users.indexOf(u) + 1).toString().padStart(2, '0')}
+                    #{(isSearching ? users.indexOf(u) + 1 : index + 4).toString().padStart(2, '0')}
                   </span>
                   <div className="relative">
                     <img src={u.profilePic || `https://api.dicebear.com/7.x/initials/svg?seed=${u.name}`} className="w-10 h-10 rounded-lg object-cover grayscale group-hover:grayscale-0 transition-all border border-white/10" alt="" />
@@ -135,7 +133,6 @@ const Leaderboard = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* --- RANKING PROTOCOL (How it works) --- */}
         <div className="mt-24 p-8 rounded-[2rem] bg-white/[0.01] border border-white/5 backdrop-blur-3xl">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20">
@@ -167,7 +164,6 @@ const Leaderboard = () => {
   );
 };
 
-/* PODIUM BOX */
 const PodiumBox = ({ user, rank, color, delay, height, isChamp }) => {
   if (!user) return <div className={`hidden md:block ${height}`} />;
   const solvedCnt = user.stats?.totalSolved || user.solvedCount || 0;

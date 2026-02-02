@@ -17,11 +17,15 @@ const protect = async (req, res, next) => {
       // Verify and decode the token using the secret key
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Attach the user to the request object while excluding the password field
       req.user = await User.findById(decoded.id).select('-password');
+
+      if (!req.user) {
+        return res.status(401).json({ message: 'User no longer exists' });
+      }
 
       next(); 
     } catch (error) {
+      console.error("Auth Middleware Error:", error.message);
       return res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }
@@ -37,10 +41,10 @@ const protect = async (req, res, next) => {
  * @access  Private/Admin
  */
 const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'Admin') { 
+  if (req.user && req.user.role && req.user.role.toLowerCase() === 'admin') { 
     next();
   } else {
-    res.status(401).json({ message: "Not authorized as an admin" });
+    res.status(403).json({ message: "Access Denied: Core Access Required" });
   }
 };
 

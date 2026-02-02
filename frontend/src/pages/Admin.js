@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -26,7 +25,8 @@ const Admin = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/users/leaderboard');
+      // FIX: BACKTICKS USED
+      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/leaderboard`);
       const userData = Array.isArray(res.data) ? res.data : (res.data.users || []);
       setUsers(userData);
     } catch (err) { console.error("Fetch Error:", err); }
@@ -34,14 +34,16 @@ const Admin = () => {
 
   const fetchAllNotifs = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/notifications');
+      // FIX: BACKTICKS USED
+      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/notifications`);
       setAllNotifications(res.data);
     } catch (err) { console.error(err); }
   };
 
   const fetchLatestPOTD = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/problems/latest');
+      // FIX: BACKTICKS USED
+      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/problems/latest`);
       if (res.data) {
         setPotd({ 
           title: res.data.title || '', 
@@ -60,10 +62,11 @@ const Admin = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
       if (potd._id) {
-        await axios.put(`http://localhost:5000/api/problems/${potd._id}`, potd, config);
+        await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/problems/${potd._id}`, potd, config);
         toast.success("POTD Refined! ⚡", { id: loadToast });
       } else {
-        await axios.post('http://localhost:5000/api/problems/add', potd, config);
+        // FIX: BACKTICKS USED
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/problems/add`, potd, config);
         toast.success("POTD Deployed! 🚀", { id: loadToast });
       }
       fetchLatestPOTD();
@@ -75,7 +78,7 @@ const Admin = () => {
     if (!potd._id || !window.confirm("Purge current POTD?")) return;
     setIsProcessing(true);
     try {
-      await axios.delete(`http://localhost:5000/api/problems/${potd._id}`, {
+      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/problems/${potd._id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setPotd({ title: '', difficulty: 'Easy', link: '', _id: null });
@@ -90,7 +93,8 @@ const Admin = () => {
     setIsProcessing(true);
     const loadToast = toast.loading("Broadcasting...");
     try {
-      const res = await axios.post('http://localhost:5000/api/notifications/create', 
+      // FIX: BACKTICKS USED
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/notifications/create`, 
         { message: notifMsg, type: 'Update' }, 
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
@@ -105,7 +109,7 @@ const Admin = () => {
     const previousNotifs = [...allNotifications];
     setAllNotifications(allNotifications.filter(n => n._id !== id));
     try {
-      await axios.delete(`http://localhost:5000/api/notifications/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/notifications/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       toast.success("Signal Purged");
@@ -118,7 +122,7 @@ const Admin = () => {
   const deleteUser = async (id) => {
     if(!window.confirm("Purge this Node permanently?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/users/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/users/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setUsers(users.filter(u => u._id !== id));
