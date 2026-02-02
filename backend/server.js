@@ -10,12 +10,10 @@ connectDB();
 
 const app = express();
 
-// Middlewares - Yahan maine limit 10MB kar di hai image ke liye
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// --- CRON JOB: DAILY PENALTY & STREAK RESET ---
 cron.schedule('0 0 * * *', async () => {
   try {
     const today = new Date().toISOString().split('T')[0];
