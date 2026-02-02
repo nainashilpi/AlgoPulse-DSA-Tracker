@@ -17,7 +17,7 @@ connectDB();
 app.use(cors({
   origin: [
     "http://localhost:3000", 
-    "https://tera-frontend-name.onrender.com"
+    "https://algopulse-frontend.onrender.com"
   ], 
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"]
