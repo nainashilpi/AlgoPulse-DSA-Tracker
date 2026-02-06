@@ -1,5 +1,15 @@
+// const admin = (req, res, next) => {
+//   if (req.user && req.user.role === 'Admin') {
+//     next();
+//   } else {
+//     res.status(403).json({ message: 'Not authorized as an admin' });
+//   }
+// };
+
+// module.exports = { admin };
+
 const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'Admin') {
+  if (req.user && req.user.role.toLowerCase() === 'admin') {
     next();
   } else {
     res.status(403).json({ message: 'Not authorized as an admin' });
