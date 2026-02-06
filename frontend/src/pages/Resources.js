@@ -114,9 +114,9 @@ const Resources = () => {
       {/* --- 02. DSA SHEETS --- */}
       <Section title="DSA_Sheets" subtitle="Top rated problem sets." icon={FileCode}>
         <div className="grid md:grid-cols-3 gap-6">
-          <ResourceCard title="Striver's A-Z" desc="Comprehensive sheet for all levels." tag="Must Do" icon={Search} link="#" />
-          <ResourceCard title="Apna College" desc="High-impact questions by Shraddha Khapra." tag="Popular" icon={Sparkles} link="#" />
-          <ResourceCard title="NeetCode 150" desc="Master coding patterns efficiently." tag="Revision" icon={Zap} link="#" />
+          <ResourceCard title="Striver's A-Z" desc="Comprehensive sheet for all levels." tag="Must Do" icon={Search} link="https://takeuforward.org/dsa/strivers-a2z-sheet-learn-dsa-a-to-z" />
+          <ResourceCard title="Apna College" desc="High-impact questions by Shraddha Khapra." tag="Popular" icon={Sparkles} link="https://dsa.apnacollege.in/" />
+          <ResourceCard title="NeetCode 150" desc="Master coding patterns efficiently." tag="Revision" icon={Zap} link="https://neetcode.io/practice/practice/neetcode150" />
         </div>
       </Section>
 
