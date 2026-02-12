@@ -12,6 +12,9 @@ import Leaderboard from './pages/Leaderboard';
 import Admin from './pages/Admin';
 import Resources from './pages/Resources';
 import Footer from "./components/Footer";
+import HallOfFame from './pages/HallOfFame';
+import Discussion from './pages/Discussion';
+
 
 // 🔥 PROTECTED ROUTE LOGIC
 const ProtectedAdminRoute = ({ children }) => {
@@ -60,8 +63,8 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/resources" element={<Resources />} />
-
-          {/* 🔥 ADMIN ROUTE NOW PROTECTED */}
+          <Route path="/hall-of-fame" element={<HallOfFame />} />
+          <Route path="/discuss" element={<Discussion />} />          {/* 🔥 ADMIN ROUTE NOW PROTECTED */}
           <Route 
             path="/admin" 
             element={

@@ -1,134 +1,152 @@
 const User = require('../models/User');
+const Winner = require('../models/Winner');
 const { fetchLeetCodeStats } = require('../utils/syncStats.js');
 
-// 1. Get Leaderboard (Ranking fix)
+/**
+ * @desc Get Leaderboard
+ */
 exports.getLeaderboard = async (req, res) => {
   try {
-    const users = await User.find({})
-      .sort({ points: -1 })
-      .select('-password')
-      .lean(); // .lean() performance ke liye aur objects ko modify karne ke liye best hai
-    
-    // Index ke base par rank add karna
-    const rankedUsers = users.map((u, index) => ({
-      ...u,
-      rank: index + 1
-    }));
-
+    const users = await User.find({ role: { $nin: ['Admin', 'admin'] } })
+      .sort({ points: -1, 'stats.totalSolved': -1 })
+      .select('-password').lean();
+    const rankedUsers = users.map((u, index) => ({ ...u, rank: index + 1 }));
     res.status(200).json(rankedUsers);
   } catch (err) {
-    console.error("Leaderboard Error:", err.message);
-    res.status(500).json({ message: "Error fetching leaderboard" });
+    res.status(500).json({ message: "SYSTEM_ERROR_LEADERBOARD" });
   }
 };
 
-// 2. Get User Profile
+/**
+ * @desc Get User Profile
+ */
 exports.getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
-    if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: "Server Error" });
+    res.status(500).json({ message: "PROFILE_FETCH_ERROR" });
   }
 };
 
-// 3. Sync LeetCode Stats (Using your GraphQL Helper)
+/**
+ * @desc Update Avatar
+ */
+exports.updateAvatar = async (req, res) => {
+  try {
+    const { profilePic } = req.body;
+    await User.findByIdAndUpdate(req.user._id, { profilePic });
+    res.json({ message: "AVATAR_UPDATED" });
+  } catch (err) {
+    res.status(500).json({ message: "AVATAR_UPDATE_ERROR" });
+  }
+};
+
+/**
+ * @desc Sync Stats for single user
+ */
 exports.syncStats = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: "User node not found" });
+    if (!user) return res.status(404).json({ message: "NODE_NOT_FOUND" });
     
-    // GraphQL Helper se data fetch karna
     const leetData = await fetchLeetCodeStats(user.leetcodeHandle);
-    
-    if (!leetData) {
-      return res.status(400).json({ message: "LeetCode user not found or API error" });
-    }
+    if (!leetData) return res.status(400).json({ message: "LEETCODE_API_FAILURE" });
 
-    // Points calculation (Only if solves increased)
-    const diffEasy = leetData.easySolved - (user.stats.easySolved || 0);
-    const diffMedium = leetData.mediumSolved - (user.stats.mediumSolved || 0);
-    const diffHard = leetData.hardSolved - (user.stats.hardSolved || 0);
-    const totalNew = diffEasy + diffMedium + diffHard;
-
-    if (totalNew > 0) {
-      const earnedPoints = (diffEasy * 10) + (diffMedium * 20) + (diffHard * 40);
-      user.points += earnedPoints;
-
-      // Streak Logic
+    const diffTotal = leetData.totalSolved - (user.stats.totalSolved || 0);
+    if (diffTotal > 0) {
+      user.points += (diffTotal * 15);
       const today = new Date().toISOString().split('T')[0];
-      const yesterdayDate = new Date();
-      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-      const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
-
-      if (user.lastSolveDate === yesterdayStr) {
-        user.streak += 1;
-      } else if (user.lastSolveDate !== today) {
-        user.streak = 1;
-      }
-
+      const yesterday = new Date(Date.now() - 864e5).toISOString().split('T')[0];
+      user.streak = (user.lastSolveDate === yesterday) ? user.streak + 1 : 1;
       user.lastSolveDate = today;
     }
-
-    // --- UPDATE USER FIELDS ---
-    user.stats = {
-      easySolved: leetData.easySolved,
-      mediumSolved: leetData.mediumSolved,
-      hardSolved: leetData.hardSolved,
-      totalSolved: leetData.totalSolved
-    };
-
-    user.topics = leetData.topics;
-
-    // --- BADGES ENGINE ---
-    let earnedBadges = [...user.badges];
-    const total = leetData.totalSolved;
-    const currentStreak = user.streak || 0;
-
-    const badgesConfig = [
-      { t: 50, n: "50 Solver" }, { t: 100, n: "Centurion" }, { t: 500, n: "LeetCode Legend" },
-      { d: 7, n: "7-Day Streak" }, { d: 30, n: "Monthly Warrior" }, { d: 100, n: "Consistent King" }
-    ];
-
-    badgesConfig.forEach(b => {
-      if (b.t && total >= b.t && !earnedBadges.includes(b.n)) earnedBadges.push(b.n);
-      if (b.d && currentStreak >= b.d && !earnedBadges.includes(b.n)) earnedBadges.push(b.n);
-    });
-
-    user.badges = earnedBadges;
-
-    // --- HEATMAP UPDATE ---
-    const todayStr = new Date().toISOString().split('T')[0];
-    const hIndex = user.dailyHistory.findIndex(h => h.date === todayStr);
-    
-    // Count ko safely update karna
-    if (hIndex > -1) {
-      user.dailyHistory[hIndex].count = total;
-    } else {
-      user.dailyHistory.push({ date: todayStr, count: total });
-    }
-
+    user.stats = { ...leetData };
     await user.save();
-    res.json({ message: "Sync Successful!", user });
-
+    res.json({ status: "SYNC_SUCCESS", user });
   } catch (err) {
-    console.error("Sync Controller Error:", err.message);
-    res.status(500).json({ message: "Internal Server Error during sync" });
+    res.status(500).json({ message: "SYNC_INTERNAL_ERROR" });
   }
 };
 
-// 4. Update Avatar
-exports.updateAvatar = async (req, res) => {
-    try {
-        const user = await User.findByIdAndUpdate(
-          req.user._id, 
-          { profilePic: req.body.profilePic }, 
-          { new: true, runValidators: true }
-        ).select('-password');
-        res.json(user);
-    } catch (err) { 
-        console.error("Avatar Update Error:", err.message);
-        res.status(500).json({ message: "Update Failed" }); 
+/**
+ * @desc Background Sync for all users (Required by server.js line 174)
+ */
+exports.syncAllUsersData = async () => {
+  try {
+    const users = await User.find({ leetcodeHandle: { $exists: true, $ne: "" } });
+    for (const user of users) {
+      const leetData = await fetchLeetCodeStats(user.leetcodeHandle);
+      if (leetData) {
+        user.stats = { ...leetData };
+        await user.save();
+      }
     }
+    console.log("--- 🔄 Global Sync Completed ---");
+  } catch (err) {
+    console.error("Global Sync Error:", err.message);
+  }
+};
+
+/**
+ * @desc Declare Weekly Winner - FIX: Creates new record for streaks
+ */
+exports.declareWeeklyWinner = async (req, res) => {
+  try {
+    const topUser = await User.findOne({ role: { $nin: ['Admin', 'admin'] }, points: { $gt: 0 } })
+      .sort({ points: -1, 'stats.totalSolved': -1 }).lean();
+
+    if (!topUser) return res.status(404).json({ message: "ZERO_ACTIVITY_DETECTED" });
+
+    const newWinner = new Winner({
+      weekEnding: new Date(),
+      userId: topUser._id,
+      name: topUser.name || topUser.username,
+      points: topUser.points,
+      leetcodeHandle: topUser.leetcodeHandle,
+      profilePic: topUser.profilePic,
+      stats: topUser.stats
+    });
+
+    await newWinner.save();
+    res.status(200).json({ message: "CHAMPION_CROWNED_SUCCESSFULLY", winner: newWinner });
+  } catch (err) {
+    res.status(500).json({ message: "WINNER_LOG_FAILURE" });
+  }
+};
+
+/**
+ * @desc Fetch Hall of Fame
+ */
+exports.getHallOfFame = async (req, res) => {
+  try {
+    const winners = await Winner.find().sort({ weekEnding: -1 }).lean();
+    res.status(200).json(winners);
+  } catch (err) {
+    res.status(500).json({ message: "FETCH_HOF_ERROR" });
+  }
+};
+
+/**
+ * @desc Delete Winner Entry
+ */
+exports.deleteWinner = async (req, res) => {
+  try {
+    await Winner.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "RECORD_PURGED" });
+  } catch (err) {
+    res.status(500).json({ message: "PURGE_ERROR" });
+  }
+};
+
+/**
+ * @desc Seasonal Reset
+ */
+exports.resetAllPoints = async (req, res) => {
+  try {
+    await User.updateMany({}, { $set: { points: 0 } });
+    res.status(200).json({ message: "SEASONAL_RESET_COMPLETE" });
+  } catch (err) {
+    res.status(500).json({ message: "RESET_FAILURE" });
+  }
 };

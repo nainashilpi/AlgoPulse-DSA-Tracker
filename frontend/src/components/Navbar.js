@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios"; 
 import {
-  Trophy, LogOut, ShieldCheck, BookOpen, Bell, X, Zap, User, Clock, Menu, Trash2
+  Trophy, LogOut, ShieldCheck, BookOpen, Bell, X, Zap, User, Clock, Menu, Trash2, Award, MessageSquare
 } from "lucide-react";
 
 const Navbar = () => {
@@ -78,6 +79,9 @@ const Navbar = () => {
         {/* DESKTOP CENTRAL NAV */}
         <div className="hidden md:flex items-center gap-2 bg-white/[0.05] p-1.5 rounded-2xl border border-white/5">
           <NavItem to="/leaderboard" icon={<Trophy size={14} />} label="ARENA" active={location.pathname === "/leaderboard"} />
+          <NavItem to="/hall-of-fame" icon={<Award size={14} />} label="LEGENDS" active={location.pathname === "/hall-of-fame"} />
+          {/* DISCUSS ADDED HERE */}
+          <NavItem to="/discuss" icon={<MessageSquare size={14} />} label="DISCUSS" active={location.pathname === "/discuss"} />
           <NavItem to="/resources" icon={<BookOpen size={14} />} label="RESOURCES" active={location.pathname === "/resources"} />
           {isAdmin && (
             <NavItem to="/admin" icon={<ShieldCheck size={14} />} label="CORE_ACCESS" active={location.pathname === "/admin"} danger />
@@ -131,6 +135,9 @@ const Navbar = () => {
             >
               <NavItem to="/dashboard" label="MY_PROFILE" active={location.pathname === "/dashboard"} onClick={() => setShowMobileMenu(false)} />
               <NavItem to="/leaderboard" label="ARENA" active={location.pathname === "/leaderboard"} onClick={() => setShowMobileMenu(false)} />
+              <NavItem to="/hall-of-fame" label="HALL_OF_FAME" active={location.pathname === "/hall-of-fame"} onClick={() => setShowMobileMenu(false)} />
+              {/* MOBILE DISCUSS */}
+              <NavItem to="/discuss" label="DISCUSS" active={location.pathname === "/discuss"} onClick={() => setShowMobileMenu(false)} />
               <NavItem to="/resources" label="RESOURCES" active={location.pathname === "/resources"} onClick={() => setShowMobileMenu(false)} />
               {isAdmin && (
                 <NavItem to="/admin" label="CORE_ACCESS" active={location.pathname === "/admin"} danger onClick={() => setShowMobileMenu(false)} />

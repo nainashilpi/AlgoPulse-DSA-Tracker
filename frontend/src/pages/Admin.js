@@ -1,40 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Send, ShieldCheck, Activity, Cpu, Zap, 
-  Search, BellRing, ChevronRight, X, BarChart3, Target, Trash2, Loader2, Lock 
+  Search, BellRing, ChevronRight, X, BarChart3, Target, Trash2, Loader2, Lock, Trophy, RefreshCcw 
 } from 'lucide-react';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('tracker'); 
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState(() => JSON.parse(localStorage.getItem('admin_users_cache')) || []);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [potd, setPotd] = useState({ title: '', difficulty: 'Easy', link: '', _id: null });
   const [notifMsg, setNotifMsg] = useState('');
   const [allNotifications, setAllNotifications] = useState([]);
+  
   const [isProcessing, setIsProcessing] = useState(false);
+  const [winnerLoading, setWinnerLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => { 
-    fetchUsers(); 
-    fetchAllNotifs();
-    fetchLatestPOTD();
+    const initFetch = async () => {
+        // Parallel fetching for max speed
+        Promise.allSettled([fetchUsers(), fetchAllNotifs(), fetchLatestPOTD()]);
+    };
+    initFetch();
   }, []);
 
   const fetchUsers = async () => {
     try {
-      // FIX: BACKTICKS USED
       const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/leaderboard`);
       const userData = Array.isArray(res.data) ? res.data : (res.data.users || []);
       setUsers(userData);
-    } catch (err) { console.error("Fetch Error:", err); }
+      localStorage.setItem('admin_users_cache', JSON.stringify(userData));
+    } catch (err) { console.error("Fetch Error"); }
   };
 
   const fetchAllNotifs = async () => {
     try {
-      // FIX: BACKTICKS USED
       const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/notifications`);
       setAllNotifications(res.data);
     } catch (err) { console.error(err); }
@@ -42,7 +46,6 @@ const Admin = () => {
 
   const fetchLatestPOTD = async () => {
     try {
-      // FIX: BACKTICKS USED
       const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/problems/latest`);
       if (res.data) {
         setPotd({ 
@@ -55,8 +58,49 @@ const Admin = () => {
     } catch (err) { console.error("POTD Fetch Error"); }
   };
 
+  // --- ACTIONS WITH ANTI-SPAM LOCK ---
+
+  const handleAnnounceTopWinner = async () => {
+    if (winnerLoading || users.length === 0) return; // Immediate spam lock
+    const topUser = users[0];
+    if (!window.confirm(`Declare ${topUser.username || topUser.name} as Season Winner?`)) return;
+    
+    setWinnerLoading(true);
+    const loadToast = toast.loading("Executing Winner Protocol...");
+    try {
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/users/declare-winner`, {}, { 
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } 
+      });
+      toast.success("Winner Protocol Executed! 🏆", { id: loadToast });
+    } catch (err) { 
+      toast.error("Winner Protocol Failed", { id: loadToast }); 
+    } finally { 
+      setTimeout(() => setWinnerLoading(false), 2000); // 2 sec cooldown
+    }
+  };
+
+  const handleResetSeasonalPoints = async () => {
+    if (resetLoading) return;
+    if (!window.confirm("CRITICAL: Reset all seasonal points to zero?")) return;
+    
+    setResetLoading(true);
+    const loadToast = toast.loading("Purging Points...");
+    try {
+      await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/users/reset-points`, {}, { 
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } 
+      });
+      toast.success("All Seasonal Points Purged", { id: loadToast });
+      fetchUsers();
+    } catch (err) { 
+      toast.error("Reset Failed", { id: loadToast }); 
+    } finally { 
+      setTimeout(() => setResetLoading(false), 2000);
+    }
+  };
+
   const handlePOTDSubmit = async (e) => {
     e.preventDefault();
+    if (isProcessing) return;
     setIsProcessing(true);
     const loadToast = toast.loading(potd._id ? "Updating POTD..." : "Pushing New POTD...");
     try {
@@ -65,7 +109,6 @@ const Admin = () => {
         await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/problems/${potd._id}`, potd, config);
         toast.success("POTD Refined! ⚡", { id: loadToast });
       } else {
-        // FIX: BACKTICKS USED
         await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/problems/add`, potd, config);
         toast.success("POTD Deployed! 🚀", { id: loadToast });
       }
@@ -75,7 +118,7 @@ const Admin = () => {
   };
 
   const deletePOTD = async () => {
-    if (!potd._id || !window.confirm("Purge current POTD?")) return;
+    if (isProcessing || !potd._id || !window.confirm("Purge current POTD?")) return;
     setIsProcessing(true);
     try {
       await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/problems/${potd._id}`, {
@@ -89,16 +132,15 @@ const Admin = () => {
 
   const handleSendNotification = async (e) => {
     e.preventDefault();
-    if(!notifMsg) return toast.error("Empty Signal!");
+    if(isProcessing || !notifMsg) return;
     setIsProcessing(true);
     const loadToast = toast.loading("Broadcasting...");
     try {
-      // FIX: BACKTICKS USED
       const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/notifications/create`, 
         { message: notifMsg, type: 'Update' }, 
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
-      setAllNotifications([res.data, ...allNotifications]); 
+      setAllNotifications(prev => [res.data, ...prev]); 
       setNotifMsg('');
       toast.success("Broadcast Live! 📢", { id: loadToast });
     } catch (err) { toast.error("Transmission Failed", { id: loadToast }); }
@@ -131,16 +173,19 @@ const Admin = () => {
     } catch (err) { toast.error("Purge Failed"); }
   };
 
-  const filteredUsers = users.filter(u => {
-    const name = u.name || u.username || "";
-    const handle = u.leetcodeHandle || "";
-    return name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           handle.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  const filteredUsers = useMemo(() => {
+    const lowSearch = searchTerm.toLowerCase();
+    return users.filter(u => {
+      const name = (u.name || u.username || "").toLowerCase();
+      const handle = (u.leetcodeHandle || "").toLowerCase();
+      return name.includes(lowSearch) || handle.includes(lowSearch);
+    });
+  }, [searchTerm, users]);
 
   return (
     <div className="min-h-screen bg-[#020408] text-slate-300 font-sans selection:bg-cyan-500/30 pb-20 pt-36 relative overflow-x-hidden">
       
+      {/* Exact Original Background */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/[0.03] blur-[120px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/[0.03] blur-[120px] rounded-full" />
@@ -149,14 +194,15 @@ const Admin = () => {
 
       <div className="max-w-6xl mx-auto px-6 relative z-10">
         
+        {/* Exact Original Header */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-6">
            <div className="flex items-center gap-4">
               <div className="bg-cyan-500/10 p-3 rounded-2xl border border-cyan-500/20">
                   <ShieldCheck size={28} className="text-cyan-400" />
               </div>
               <div>
-                 <h1 className="text-2xl font-black tracking-tighter uppercase italic text-white">Neural <span className="text-cyan-400">Admin_</span></h1>
-                 <p className="text-[9px] text-slate-600 font-black tracking-[0.4em] uppercase">Control_Systems_V5.0</p>
+                  <h1 className="text-2xl font-black tracking-tighter uppercase italic text-white">Neural <span className="text-cyan-400">Admin_</span></h1>
+                  <p className="text-[9px] text-slate-600 font-black tracking-[0.4em] uppercase">Control_Systems_V5.0</p>
               </div>
            </div>
            
@@ -169,6 +215,7 @@ const Admin = () => {
            </div>
         </div>
 
+        {/* Original User Stream */}
         <div className="mb-12 group">
           <div className="flex items-center justify-between mb-4 px-2">
             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic flex items-center gap-2">
@@ -180,7 +227,7 @@ const Admin = () => {
             {users.length > 0 ? users.map((u, i) => (
               <div key={u._id || i} onClick={() => {setSelectedUser(u); setActiveTab('tracker');}} className={`flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer transition-all ${selectedUser?._id === u._id ? 'scale-110' : 'opacity-40 hover:opacity-100'}`}>
                 <div className={`w-14 h-14 rounded-full p-0.5 border-2 ${selectedUser?._id === u._id ? 'border-cyan-400' : 'border-white/10'}`}>
-                   <img src={u.profilePic || 'https://via.placeholder.com/150'} className="w-full h-full rounded-full object-cover" alt="" />
+                    <img src={u.profilePic || 'https://via.placeholder.com/150'} className="w-full h-full rounded-full object-cover" alt="" />
                 </div>
                 <span className={`text-[8px] font-black uppercase ${selectedUser?._id === u._id ? 'text-cyan-400' : 'text-slate-700'}`}>ID_{i+10}</span>
               </div>
@@ -317,7 +364,6 @@ const Admin = () => {
                                 </motion.div>
                               ))}
                             </AnimatePresence>
-                            {allNotifications.length === 0 && <p className="text-center text-[9px] text-slate-800 py-8 font-black italic uppercase tracking-[0.3em]">No signals in orbit</p>}
                          </div>
                       </div>
                   </div>
@@ -327,7 +373,46 @@ const Admin = () => {
           </AnimatePresence>
         </div>
 
-        <div className="mt-20 py-8 border-t border-white/5 flex flex-col items-center justify-center gap-3 opacity-30">
+        {/* Original Action Trigger Buttons (Fixed Spam Logic) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-12 mb-20">
+          <div className="p-6 bg-yellow-500/5 border border-yellow-500/10 rounded-[2rem] flex items-center justify-between backdrop-blur-md group hover:border-yellow-500/30 transition-all">
+            <div className="flex items-center gap-4">
+              <Trophy size={24} className="text-yellow-500 group-hover:scale-110 transition-transform" />
+              <div>
+                <h3 className="text-[11px] font-black text-white uppercase italic tracking-widest">Season_Winner</h3>
+                <p className="text-[8px] text-slate-600 font-bold uppercase mt-1">Declare Current Top Node</p>
+              </div>
+            </div>
+            <button 
+              onClick={handleAnnounceTopWinner} 
+              disabled={winnerLoading} 
+              className={`h-12 px-8 rounded-2xl text-[10px] font-black uppercase italic border transition-all active:scale-90 flex items-center justify-center 
+                ${winnerLoading ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20 hover:bg-yellow-500 hover:text-black'}`}
+            >
+                {winnerLoading ? <Loader2 className="animate-spin" size={14}/> : "EXECUTE"}
+            </button>
+          </div>
+
+          <div className="p-6 bg-red-500/5 border border-red-500/10 rounded-[2rem] flex items-center justify-between backdrop-blur-md group hover:border-red-500/30 transition-all">
+            <div className="flex items-center gap-4">
+              <RefreshCcw size={24} className="text-red-500 group-hover:rotate-180 transition-transform duration-500" />
+              <div>
+                <h3 className="text-[11px] font-black text-white uppercase italic tracking-widest">Points_Purge</h3>
+                <p className="text-[8px] text-slate-600 font-bold uppercase mt-1">Global Reset Protocol</p>
+              </div>
+            </div>
+            <button 
+              onClick={handleResetSeasonalPoints} 
+              disabled={resetLoading} 
+              className={`h-12 px-8 rounded-2xl text-[10px] font-black uppercase italic border transition-all active:scale-90 flex items-center justify-center
+                ${resetLoading ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed' : 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500 hover:text-black'}`}
+            >
+                {resetLoading ? <Loader2 className="animate-spin" size={14}/> : "EXECUTE"}
+            </button>
+          </div>
+        </div>
+
+        <div className="py-8 border-t border-white/5 flex flex-col items-center justify-center gap-3 opacity-30">
            <div className="flex items-center gap-2 text-[8px] font-black text-slate-500 tracking-[0.5em] uppercase italic">
               <Lock size={10} className="text-cyan-500" /> Administrative_Access_Only
            </div>
@@ -337,7 +422,11 @@ const Admin = () => {
         </div>
 
       </div>
-      <style jsx>{` .no-scrollbar::-webkit-scrollbar { display: none; } .custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34, 211, 238, 0.1); border-radius: 10px; } `}</style>
+      <style jsx>{` 
+        .no-scrollbar::-webkit-scrollbar { display: none; } 
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; } 
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34, 211, 238, 0.1); border-radius: 10px; } 
+      `}</style>
     </div>
   );
 };
