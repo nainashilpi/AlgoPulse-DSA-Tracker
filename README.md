@@ -48,22 +48,21 @@
    cd client
    npm install
 4. Environment Variables:
-  Create a .env file in the server directory and add:
-  ```
-  Code snippet
-  MONGO_URI=your_mongodb_uri
-  JWT_SECRET=your_jwt_secret
-  PORT=5000
+    Create a .env file in the server directory and add:
    ```
+   Code snippet
+   MONGO_URI=your_mongodb_uri
+   JWT_SECRET=your_jwt_secret
+   PORT=5000
 5. Environment Variables:
-  Create a .env file in the server directory and add:
-  ```
-  Code snippet
-  MONGO_URI=your_mongodb_uri
-  JWT_SECRET=your_jwt_secret
-  PORT=5000
-  ```
+    Create a .env file in the server directory and add:
+   ```
+   # Start Backend (from server folder)
+   npm start
 
+   # Start Frontend (from client folder)
+   npm start
+  
   🤝 Contributing
 Contributions are welcome! Feel free to open an issue or submit a pull request.
 
