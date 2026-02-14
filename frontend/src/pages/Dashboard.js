@@ -41,7 +41,10 @@ const ProgressDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUser(res.data); 
-    } catch (err) { console.error(err); }
+      localStorage.setItem('user', JSON.stringify(res.data));
+    } catch (err) { 
+      console.error("Profile Fetch Error:", err); 
+    }
   };
 
   const fetchPOTD = async () => {
@@ -56,9 +59,25 @@ const ProgressDashboard = () => {
     setShowSyncPrompt(false);
     try {
       const token = localStorage.getItem('token');
-      await axios.get(`${BASE_URL}/api/users/sync`, { headers: { Authorization: `Bearer ${token}` } });
-      await fetchUserData(); 
-    } catch (err) { alert("Sync Failed."); } finally { setIsSyncing(false); }
+      
+      const res = await axios.get(`${BASE_URL}/api/users/sync`, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+
+      if (res.data) {
+          // Force update with spread operator to trigger re-render of heatmap
+          const updatedData = res.data.user || res.data;
+          setUser({ ...updatedData }); 
+          localStorage.setItem('user', JSON.stringify(updatedData));
+      }
+      
+      alert("Database Synced Successfully!");
+    } catch (err) { 
+      console.error("Sync Error:", err);
+      alert("Sync Failed: API Limit or Network Error"); 
+    } finally { 
+      setIsSyncing(false); 
+    }
   };
 
   const handleImageChange = async (e) => {
@@ -94,7 +113,6 @@ const ProgressDashboard = () => {
 
       <main className="relative z-10 max-w-7xl mx-auto px-10 pt-60 pb-20">
         
-        {/* --- HEADER SECTION --- */}
         <section className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center gap-16 mb-32 pb-24 border-b border-white/5 lg:pl-16">
           <div className="relative shrink-0">
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute -inset-10 border border-dashed border-cyan-500/20 rounded-full" />
@@ -141,7 +159,6 @@ const ProgressDashboard = () => {
           </div>
         </section>
 
-        {/* --- POTD SECTION --- */}
         {potd && (
           <motion.section 
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -160,14 +177,12 @@ const ProgressDashboard = () => {
           </motion.section>
         )}
 
-        {/* --- STATS GRID --- */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-32 pb-24 border-b border-white/5">
           <StatItem icon={<Target size={20}/>} label="Total Decoded" value={user.stats?.totalSolved || 0} sub={`E:${user.stats?.easySolved} M:${user.stats?.mediumSolved} H:${user.stats?.hardSolved}`} />
           <StatItem icon={<Activity size={20}/>} label="Current Streak" value={`${user.streak || 0} DAYS`} sub="Consistency Multiplier" />
           <StatItem icon={<Award size={20}/>} label="Neural Points" value={user.points || 0} sub="Protocol Rank: Elite" />
         </section>
 
-        {/* --- ACHIEVEMENT VAULT (Original Style + Design) --- */}
         <section className="mb-32 pb-24 border-b border-white/5">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-6xl font-black text-white italic uppercase tracking-tighter mb-4">Achievement_Vault</h2>
@@ -207,7 +222,6 @@ const ProgressDashboard = () => {
           </div>
         </section>
 
-        {/* --- PROGRESS & ACTIVITY --- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-start mb-20">
           <section className="space-y-12">
             <div>
@@ -243,39 +257,49 @@ const ProgressDashboard = () => {
             </div>
           </section>
 
-          {/* --- HEATMAP SECTION (Exact original logic) --- */}
           <section>
-             <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-8 flex items-center gap-3">
-               <Calendar className="text-cyan-500" size={24} /> Neural_Activity
-             </h2>
-             <div className="bg-white/[0.02] p-8 rounded-[2rem] border border-white/5 overflow-x-auto">
-                <div className="flex gap-1.5 min-w-[400px]">
-                  {[...Array(24)].map((_, i) => (
-                    <div key={i} className="flex flex-col gap-1.5">
-                      {[...Array(7)].map((_, j) => {
-                        const d = new Date();
-                        d.setDate(d.getDate() - (23 - i) * 7 - (6 - j));
-                        const dateStr = d.toISOString().split('T')[0];
-                        const entry = user?.dailyHistory?.find(h => h.date === dateStr);
-                        const isActive = entry?.count > 0;
-                        return (
-                          <motion.div 
-                            key={j} 
-                            title={`${dateStr}: ${entry?.count || 0} Solved`}
-                            whileHover={{ scale: 1.4, backgroundColor: isActive ? '#22d3ee' : '#ffffff20' }}
-                            className={`w-3 h-3 rounded-[3px] border transition-all ${isActive ? 'bg-cyan-500 border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]' : 'bg-white/5 border-white/5'}`} 
-                          />
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-             </div>
+            <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-8 flex items-center gap-3">
+              <Calendar className="text-cyan-500" size={24} /> Neural_Activity
+            </h2>
+            <div className="bg-white/[0.02] p-8 rounded-[2rem] border border-white/5 overflow-x-auto">
+              {/* Added key={user.points} to force re-render on sync */}
+              <div className="flex gap-1.5 min-w-[400px]" key={user?.points || 'heatmap'}>
+                {[...Array(24)].map((_, i) => (
+                  <div key={`col-${i}`} className="flex flex-col gap-1.5">
+                    {[...Array(7)].map((_, j) => {
+                      const d = new Date();
+                      d.setDate(d.getDate() - (23 - i) * 7 - (6 - j));
+                      const dateISO = d.toISOString().split('T')[0];
+
+                      const entry = user?.dailyHistory?.find(h => {
+                        if(!h.date) return false;
+                        return new Date(h.date).toISOString().split('T')[0] === dateISO;
+                      });
+
+                      const count = entry ? entry.count : 0;
+                      const isActive = count > 0;
+
+                      return (
+                        <motion.div 
+                          key={`${dateISO}-${count}`} 
+                          title={`${dateISO}: ${count} Solved`}
+                          whileHover={{ scale: 1.4, backgroundColor: isActive ? '#22d3ee' : '#ffffff20' }}
+                          className={`w-3 h-3 rounded-[3px] border transition-all duration-300 ${
+                            isActive 
+                            ? 'bg-cyan-500 border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]' 
+                            : 'bg-white/5 border-white/5'
+                          }`} 
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
           </section>
         </div>
       </main>
 
-      {/* --- SYNC BUTTON & PROMPT (Original Style) --- */}
       <div className="fixed bottom-10 right-10 z-[100] flex flex-col items-end gap-3">
         <AnimatePresence>
           {showSyncPrompt && !isSyncing && (
