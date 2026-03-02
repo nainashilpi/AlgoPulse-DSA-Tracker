@@ -163,11 +163,10 @@ const fetchGFGStats = async (handle) => {
   try {
     const isRender = process.env.RENDER === 'true';
     
-    // 🌟 FIX: Render ke liye manual path
-    const renderChromePath = '/opt/render/chrome/opt/google/chrome/chrome';
+    // 🌟 FIX: Render ka latest path try karte hain
+    const renderChromePath = '/usr/bin/google-chrome';
     const chromePath = isRender ? renderChromePath : undefined;
     
-    // DEBUG: Path check karne ke liye
     console.log("DEBUG: Using path:", chromePath); 
     
     browser = await puppeteer.launch({
