@@ -20,7 +20,8 @@ exports.register = async (req, res) => {
       name, 
       email, 
       password: hashedPassword, 
-      leetcodeHandle 
+      leetcodeHandle ,
+      gfgHandle,
     });
 
     await user.save();

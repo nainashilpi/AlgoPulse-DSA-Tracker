@@ -3,8 +3,7 @@ import axios from 'axios';
 import { motion, useScroll, useSpring, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Zap, Target, Calendar, Award, 
-  RefreshCcw, Camera, ExternalLink, 
-  ChevronRight, Fingerprint, Box, ArrowUpRight, Cpu, Lock,
+  RefreshCcw, Camera, Box, ArrowUpRight, Cpu, Lock,
   Flame, ShieldCheck, Star, Gem, Medal, Trophy
 } from 'lucide-react';
 
@@ -42,9 +41,7 @@ const ProgressDashboard = () => {
       });
       setUser(res.data); 
       localStorage.setItem('user', JSON.stringify(res.data));
-    } catch (err) { 
-      console.error("Profile Fetch Error:", err); 
-    }
+    } catch (err) { console.error("Fetch Error:", err); }
   };
 
   const fetchPOTD = async () => {
@@ -57,27 +54,23 @@ const ProgressDashboard = () => {
   const handleSync = async () => {
     setIsSyncing(true);
     setShowSyncPrompt(false);
+    const oldPoints = user?.points || 0;
     try {
       const token = localStorage.getItem('token');
-      
       const res = await axios.get(`${BASE_URL}/api/users/sync`, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
 
       if (res.data) {
-          // Force update with spread operator to trigger re-render of heatmap
-          const updatedData = res.data.user || res.data;
-          setUser({ ...updatedData }); 
-          localStorage.setItem('user', JSON.stringify(updatedData));
+        const updatedData = res.data.user || res.data;
+        setUser({ ...updatedData });
+        localStorage.setItem('user', JSON.stringify(updatedData));
+        if (updatedData.points > oldPoints) alert(`Success! +${updatedData.points - oldPoints} Points earned! 🚀`);
+        else if (updatedData.points < oldPoints) alert(`Warning: -5 Points Penalty! No new activity. ⚠️`);
+        else alert("Synced! No changes found.");
       }
-      
-      alert("Database Synced Successfully!");
-    } catch (err) { 
-      console.error("Sync Error:", err);
-      alert("Sync Failed: API Limit or Network Error"); 
-    } finally { 
-      setIsSyncing(false); 
-    }
+    } catch (err) { alert("Sync Failed!"); } 
+    finally { setIsSyncing(false); }
   };
 
   const handleImageChange = async (e) => {
@@ -101,11 +94,19 @@ const ProgressDashboard = () => {
     </div>
   );
 
+  const s = user.stats || {};
+  const totalSolved = s.totalSolved || 0;
+  const lcCount = (s.easySolved || 0) + (s.mediumSolved || 0) + (s.hardSolved || 0);
+  const easy = s.easySolved || 0;
+  const med = s.mediumSolved || 0;
+  const hard = s.hardSolved || 0;
+
   return (
     <div className="bg-[#05070a] text-slate-400 min-h-screen font-sans selection:bg-cyan-500/30 relative overflow-x-hidden">
       
       <motion.div className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 z-[100] origin-left" style={{ scaleX }} />
 
+      {/* --- UI BACKGROUND --- */}
       <div className="fixed inset-0 pointer-events-none opacity-40">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 blur-[120px] rounded-full" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 blur-[120px] rounded-full" />
@@ -113,6 +114,7 @@ const ProgressDashboard = () => {
 
       <main className="relative z-10 max-w-7xl mx-auto px-10 pt-60 pb-20">
         
+        {/* --- PROFILE SECTION (EXACT ORIGINAL) --- */}
         <section className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center gap-16 mb-32 pb-24 border-b border-white/5 lg:pl-16">
           <div className="relative shrink-0">
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute -inset-10 border border-dashed border-cyan-500/20 rounded-full" />
@@ -120,50 +122,48 @@ const ProgressDashboard = () => {
             
             <div className="w-64 h-64 md:w-80 md:h-80 rounded-full p-2 bg-gradient-to-tr from-cyan-500/40 via-transparent to-purple-500/40 relative z-10 backdrop-blur-3xl shadow-[0_0_50px_rgba(34,211,238,0.15)]">
                 <div className="w-full h-full rounded-full overflow-hidden border-2 border-white/10 relative group bg-[#05070a]">
-                   <img src={user.profilePic || 'https://via.placeholder.com/300'} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="User" />
-                   <label className="absolute inset-0 bg-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer backdrop-blur-sm">
-                     <Camera className="text-white" size={32} />
-                     <input type="file" className="hidden" onChange={handleImageChange} />
-                   </label>
-                </div>
-            </div>
+                    <img src={user.profilePic || 'https://via.placeholder.com/300'} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="User" />
+                    <label className="absolute inset-0 bg-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer backdrop-blur-sm">
+                      <Camera className="text-white" size={32} />
+                      <input type="file" className="hidden" onChange={handleImageChange} />
+                    </label>
+                 </div>
+             </div>
 
-            <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 3 }} className="absolute top-0 -right-4 bg-white/5 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-2xl z-20">
-                <p className="text-[10px] font-black uppercase text-cyan-500 tracking-widest">Points</p>
-                <h4 className="text-2xl font-black text-white italic">{user.points}</h4>
-            </motion.div>
+             <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 3 }} className="absolute top-0 -right-4 bg-white/5 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-2xl z-20">
+                 <p className="text-[10px] font-black uppercase text-cyan-500 tracking-widest">Points</p>
+                 <h4 className="text-2xl font-black text-white italic">{user.points || 0}</h4>
+             </motion.div>
           </div>
 
           <div className="flex-1 text-center lg:text-left">
             <div className="flex items-center justify-center lg:justify-start gap-4 mb-4">
-                <span className="w-12 h-[1px] bg-cyan-500" />
-                <p className="text-xs font-mono uppercase tracking-[0.5em] text-cyan-500">Progress_Dashboard</p>
+                 <span className="w-12 h-[1px] bg-cyan-500" />
+                 <p className="text-xs font-mono uppercase tracking-[0.5em] text-cyan-500">Progress_Dashboard</p>
             </div>
             <h1 className="text-6xl md:text-8xl font-black text-white italic tracking-tighter uppercase leading-none mb-6">
-                 {user.name.split(' ')[0]} <br/> 
-                 <span className="text-transparent" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.3)' }}>{user.name.split(' ')[1] || 'Node'}</span>
+                 {user.name?.split(' ')[0]} <br/> 
+                 <span className="text-transparent" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.3)' }}>{user.name?.split(' ')[1] || 'Node'}</span>
             </h1>
             <p className="max-w-xl text-slate-500 text-sm leading-relaxed mb-8 italic">
                  "System active. Protocol initialized. Decrypting algorithmic patterns in real-time."
             </p>
             <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-2.5 rounded-full">
-                   <Cpu size={14} className="text-cyan-500" />
-                   <span className="text-[10px] font-black uppercase text-white">Level {Math.floor(user.points/100) || 1}</span>
-                </div>
-                <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-2.5 rounded-full">
-                   <Activity size={14} className="text-green-500" />
-                   <span className="text-[10px] font-black uppercase text-white">Status: Active</span>
-                </div>
+                 <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-2.5 rounded-full">
+                    <Cpu size={14} className="text-cyan-500" />
+                    <span className="text-[10px] font-black uppercase text-white">Level {Math.floor((user.points || 0)/100) || 1}</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-2.5 rounded-full">
+                    <Activity size={14} className="text-green-500" />
+                    <span className="text-[10px] font-black uppercase text-white">Status: Active</span>
+                  </div>
             </div>
           </div>
         </section>
 
+        {/* --- POTD SECTION --- */}
         {potd && (
-          <motion.section 
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="mb-32 pb-24 border-b border-white/5 flex flex-col md:flex-row justify-between items-center gap-8"
-          >
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-32 pb-24 border-b border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex gap-6 items-center">
               <Zap className="text-cyan-500 shrink-0" size={32} />
               <div>
@@ -171,50 +171,35 @@ const ProgressDashboard = () => {
                 <p className="text-sm text-slate-500 uppercase tracking-widest mt-1">Difficulty // <span className="text-cyan-500">{potd.difficulty}</span></p>
               </div>
             </div>
-            <a href={potd.link} target="_blank" rel="noreferrer" className="px-8 py-4 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-cyan-500 transition-colors flex items-center gap-2">
-              Launch Mission <ArrowUpRight size={14} />
-            </a>
+            <a href={potd.link} target="_blank" rel="noreferrer" className="px-8 py-4 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-cyan-500 transition-colors flex items-center gap-2"> Launch Mission <ArrowUpRight size={14} /> </a>
           </motion.section>
         )}
 
+        {/* --- STATS --- */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-32 pb-24 border-b border-white/5">
-          <StatItem icon={<Target size={20}/>} label="Total Decoded" value={user.stats?.totalSolved || 0} sub={`E:${user.stats?.easySolved} M:${user.stats?.mediumSolved} H:${user.stats?.hardSolved}`} />
-          <StatItem icon={<Activity size={20}/>} label="Current Streak" value={`${user.streak || 0} DAYS`} sub="Consistency Multiplier" />
-          <StatItem icon={<Award size={20}/>} label="Neural Points" value={user.points || 0} sub="Protocol Rank: Elite" />
+            <StatItem icon={<Target size={20}/>} label="Total Decoded" value={totalSolved} sub={`LC: ${lcCount} | GFG: ${s.gfgSolved || 0}`} />
+            <StatItem icon={<Activity size={20}/>} label="Current Streak" value={`${user.streak || 0} DAYS`} sub="Consistency Multiplier" />
+            <StatItem icon={<Award size={20}/>} label="Neural Points" value={user.points || 0} sub={`Rank: ${user.points > 500 ? 'Elite' : 'Novice'}`} />
         </section>
 
+        {/* --- ACHIEVEMENTS VAULT --- */}
         <section className="mb-32 pb-24 border-b border-white/5">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-6xl font-black text-white italic uppercase tracking-tighter mb-4">Achievement_Vault</h2>
             <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] italic">Unlock milestones by maintaining high-frequency activity</p>
           </div>
-          
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {allPossibleBadges.map((badge, idx) => {
               const isEarned = user.badges?.includes(badge.name);
               return (
-                <motion.div 
-                  key={idx}
-                  whileHover={isEarned ? { y: -10 } : {}}
-                  className={`relative p-8 rounded-[2.5rem] border transition-all duration-700 flex flex-col items-center text-center gap-4 overflow-hidden group ${
-                    isEarned ? 'bg-white/[0.03] border-white/10 shadow-2xl' : 'bg-transparent border-white/5 opacity-30 grayscale'
-                  }`}
-                >
-                  {isEarned && (
-                    <div className={`absolute -inset-1 opacity-20 bg-gradient-to-br ${badge.color} blur-2xl group-hover:opacity-40 transition-opacity`} />
-                  )}
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center relative z-10 transition-transform duration-500 ${
-                    isEarned ? `bg-gradient-to-br ${badge.color} text-black shadow-lg group-hover:rotate-[360deg]` : 'bg-white/5 text-slate-600'
-                  }`}>
+                <motion.div key={idx} whileHover={isEarned ? { y: -10 } : {}} className={`relative p-8 rounded-[2.5rem] border transition-all duration-700 flex flex-col items-center text-center gap-4 overflow-hidden group ${isEarned ? 'bg-white/[0.03] border-white/10 shadow-2xl' : 'bg-transparent border-white/5 opacity-30 grayscale'}`}>
+                  {isEarned && <div className={`absolute -inset-1 opacity-20 bg-gradient-to-br ${badge.color} blur-2xl group-hover:opacity-40 transition-opacity`} />}
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center relative z-10 transition-transform duration-500 ${isEarned ? `bg-gradient-to-br ${badge.color} text-black shadow-lg group-hover:rotate-[360deg]` : 'bg-white/5 text-slate-600'}`}>
                     {isEarned ? badge.icon : <Lock size={24} />}
                   </div>
                   <div className="relative z-10">
-                    <h5 className={`text-[11px] font-black uppercase tracking-tighter mb-1 ${isEarned ? 'text-white' : 'text-slate-600'}`}>
-                      {badge.name}
-                    </h5>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase leading-tight tracking-widest">
-                      {badge.desc}
-                    </p>
+                    <h5 className={`text-[11px] font-black uppercase tracking-tighter mb-1 ${isEarned ? 'text-white' : 'text-slate-600'}`}>{badge.name}</h5>
+                    <p className="text-[8px] font-bold text-slate-500 uppercase leading-tight tracking-widest">{badge.desc}</p>
                   </div>
                 </motion.div>
               );
@@ -222,84 +207,68 @@ const ProgressDashboard = () => {
           </div>
         </section>
 
+        {/* --- DECOMPOSITION, TOPICS & HEATMAP --- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-start mb-20">
-          <section className="space-y-12">
-            <div>
-              <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2 flex items-center gap-3">
-                <Box className="text-cyan-500" size={24} /> Algorithm_Decomposition
-              </h2>
-              <p className="text-sm text-slate-500 uppercase tracking-[0.2em]">Efficiency analysis per complexity level</p>
-            </div>
-            
-            <div className="space-y-8">
-              <SleekProgress label="Easy" color="bg-green-500" percent={(user.stats?.easySolved / (user.stats?.totalSolved || 1)) * 100} />
-              <SleekProgress label="Medium" color="bg-yellow-500" percent={(user.stats?.mediumSolved / (user.stats?.totalSolved || 1)) * 100} />
-              <SleekProgress label="Hard" color="bg-red-500" percent={(user.stats?.hardSolved / (user.stats?.totalSolved || 1)) * 100} />
-            </div>
+            <section className="space-y-12">
+              <div>
+                <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2 flex items-center gap-3">
+                  <Box className="text-cyan-500" size={24} /> Algorithm_Decomposition
+                </h2>
+                <p className="text-sm text-slate-500 uppercase tracking-[0.2em]">Efficiency analysis per complexity level</p>
+              </div>
+              <div className="space-y-8">
+                <SleekProgress label="Easy" color="bg-green-500" percent={(easy / (lcCount || 1)) * 100} />
+                <SleekProgress label="Medium" color="bg-yellow-500" percent={(med / (lcCount || 1)) * 100} />
+                <SleekProgress label="Hard" color="bg-red-500" percent={(hard / (lcCount || 1)) * 100} />
+              </div>
 
-            <div className="pt-12 border-t border-white/5 mt-12">
-              <p className="text-[10px] font-black uppercase text-slate-600 tracking-widest mb-6 italic">Top_Neural_Specializations</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {user.topics?.map((t, idx) => {
-                    const perc = ((t.solved / (user.stats?.totalSolved || 1)) * 100).toFixed(1);
-                    return (
-                      <div key={idx} className="bg-white/[0.02] border border-white/5 p-5 rounded-2xl group hover:border-cyan-500/30 transition-all relative overflow-hidden">
+              {/* TOPICS (Restore Content) */}
+              <div className="pt-12 border-t border-white/5">
+                <p className="text-[10px] font-black uppercase text-slate-600 tracking-widest mb-6 italic">Top_Neural_Specializations</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {user.topics?.map((t, idx) => (
+                    <div key={idx} className="bg-white/[0.02] border border-white/5 p-5 rounded-2xl group hover:border-cyan-500/30 transition-all relative overflow-hidden">
                         <div className="flex justify-between items-start mb-3 relative z-10">
                           <span className="text-[10px] font-black text-white uppercase tracking-tighter italic">{t.name}</span>
-                          <span className="text-[10px] font-mono text-cyan-500">{perc}%</span>
+                          <span className="text-[10px] font-mono text-cyan-500">{((t.solved / (totalSolved || 1)) * 100).toFixed(1)}%</span>
                         </div>
                         <h4 className="text-xl font-black text-white italic relative z-10">{t.solved} <span className="text-[8px] text-slate-600 uppercase">Solved</span></h4>
-                        <div className="absolute bottom-0 left-0 h-1 bg-cyan-500/20" style={{ width: `${perc}%` }} />
-                      </div>
-                    );
-                })}
+                        <div className="absolute bottom-0 left-0 h-1 bg-cyan-500/20" style={{ width: `${(t.solved / (totalSolved || 1)) * 100}%` }} />
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <section>
-            <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-8 flex items-center gap-3">
-              <Calendar className="text-cyan-500" size={24} /> Neural_Activity
-            </h2>
-            <div className="bg-white/[0.02] p-8 rounded-[2rem] border border-white/5 overflow-x-auto">
-              {/* Added key={user.points} to force re-render on sync */}
-              <div className="flex gap-1.5 min-w-[400px]" key={user?.points || 'heatmap'}>
-                {[...Array(24)].map((_, i) => (
-                  <div key={`col-${i}`} className="flex flex-col gap-1.5">
-                    {[...Array(7)].map((_, j) => {
-                      const d = new Date();
-                      d.setDate(d.getDate() - (23 - i) * 7 - (6 - j));
-                      const dateISO = d.toISOString().split('T')[0];
-
-                      const entry = user?.dailyHistory?.find(h => {
-                        if(!h.date) return false;
-                        return new Date(h.date).toISOString().split('T')[0] === dateISO;
-                      });
-
-                      const count = entry ? entry.count : 0;
-                      const isActive = count > 0;
-
-                      return (
-                        <motion.div 
-                          key={`${dateISO}-${count}`} 
-                          title={`${dateISO}: ${count} Solved`}
-                          whileHover={{ scale: 1.4, backgroundColor: isActive ? '#22d3ee' : '#ffffff20' }}
-                          className={`w-3 h-3 rounded-[3px] border transition-all duration-300 ${
-                            isActive 
-                            ? 'bg-cyan-500 border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]' 
-                            : 'bg-white/5 border-white/5'
-                          }`} 
-                        />
-                      );
-                    })}
-                  </div>
-                ))}
+            <section>
+              <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-8 flex items-center gap-3">
+                <Calendar className="text-cyan-500" size={24} /> Neural_Activity
+              </h2>
+              <div className="bg-white/[0.02] p-8 rounded-[2rem] border border-white/5 overflow-x-auto">
+                <div className="flex gap-1.5 min-w-[400px]" key={user.points}>
+                  {[...Array(24)].map((_, i) => (
+                    <div key={`col-${i}`} className="flex flex-col gap-1.5">
+                      {[...Array(7)].map((_, j) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() - (23 - i) * 7 - (6 - j));
+                        const dateISO = d.toISOString().split('T')[0];
+                        const entry = user.dailyHistory?.find(h => h.date && new Date(h.date).toISOString().split('T')[0] === dateISO);
+                        const count = entry ? entry.count : 0;
+                        return (
+                          <motion.div key={dateISO} title={`${dateISO}: ${count} Solved`} whileHover={{ scale: 1.4, backgroundColor: count > 0 ? '#22d3ee' : '#ffffff20' }}
+                            className={`w-3 h-3 rounded-[3px] border transition-all duration-300 ${count > 0 ? 'bg-cyan-500 border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]' : 'bg-white/5 border-white/5'}`} 
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
         </div>
       </main>
 
+      {/* --- SYNC BUTTON --- */}
       <div className="fixed bottom-10 right-10 z-[100] flex flex-col items-end gap-3">
         <AnimatePresence>
           {showSyncPrompt && !isSyncing && (
@@ -319,6 +288,7 @@ const ProgressDashboard = () => {
   );
 };
 
+// --- HELPER COMPONENTS (EXACT ORIGINAL) ---
 const StatItem = ({ icon, label, value, sub }) => (
   <motion.div whileHover={{ y: -5 }} className="border-l-2 border-white/5 pl-8 py-4">
     <div className="text-cyan-500 mb-4">{icon}</div>
@@ -341,3 +311,5 @@ const SleekProgress = ({ label, color, percent }) => (
 );
 
 export default ProgressDashboard;
+
+
