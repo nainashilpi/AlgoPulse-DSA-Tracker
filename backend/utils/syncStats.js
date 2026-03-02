@@ -85,7 +85,6 @@
 
 const axios = require('axios');
 const puppeteer = require('puppeteer-extra');
-const path = require('path');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
@@ -119,7 +118,7 @@ const fetchLeetCodeStats = async (handle) => {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Referer': 'https://leetcode.com/'
         },
-        timeout: 10000 
+        timeout: 15000 
       }
     );
 
@@ -155,20 +154,21 @@ const fetchLeetCodeStats = async (handle) => {
 };
 
 /**
- * @desc Fetches GFG total solved count (Updated with Stealth)
+ * @desc Fetches GFG total solved count (Auto-Path Fix for Render)
  */
 const fetchGFGStats = async (handle) => {
   if (!handle) return { totalSolved: 0 };
   
   let browser;
   try {
-    const isRender = process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
+    const isRender = process.env.RENDER === 'true';
     
-    const puppeteerPath = isRender ? puppeteer.executablePath() : undefined;
+    // 🌟 FIX: Hardcoded path hata kar auto-detection laga di hai
+    const chromePath = isRender ? puppeteer.executablePath() : undefined;
     
     browser = await puppeteer.launch({
       headless: "new",
-      executablePath: puppeteerPath, // Yahan auto-detected path use karo
+      executablePath: chromePath, 
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox', 
@@ -177,30 +177,27 @@ const fetchGFGStats = async (handle) => {
         '--no-zygote'
       ]
     });
+
     const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+    // GFG protection bypass karne ke liye real User Agent
+    await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
 
     const url = `https://www.geeksforgeeks.org/profile/${handle}?tab=activity`;
     console.log(`🔍 Attempting Sync for GFG: ${handle}`);
 
-    const response = await page.goto(url, {
-      waitUntil: 'networkidle2', 
-      timeout: 60000 
-    });
+    // Wait for network to be quiet
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
-    if (response.status() === 404) {
-      console.log(`❌ GFG Handle '${handle}' not found (404).`);
-      await browser.close();
-      return { totalSolved: 0 };
-    }
-
-    await new Promise(r => setTimeout(r, 5000));
+    // Wait extra for JS elements to render
+    await new Promise(r => setTimeout(r, 4000));
 
     const totalSolved = await page.evaluate(() => {
+      // Multiple selectors check kar rahe hain taaki GFG UI update ho to bhi kaam kare
       const selectors = [
         '.scoreCard_head_left--score__39_Zz',
         '.scoreCard_head_card_left',
-        '.problem_solved_value'
+        '.problem_solved_value',
+        'div[class*="scoreCard_head_left--score"]'
       ];
 
       for (let s of selectors) {
@@ -209,15 +206,12 @@ const fetchGFGStats = async (handle) => {
           return parseInt(el.innerText.match(/\d+/)[0]);
         }
       }
-      
-      const bodyText = document.body.innerText;
-      const match = bodyText.match(/Problems Solved[:\s]+(\d+)/i);
-      return match ? parseInt(match[1]) : 0;
+      return 0;
     });
 
     console.log(`✅ SUCCESS: GFG Result for ${handle} -> ${totalSolved}`);
     await browser.close();
-    return { totalSolved: totalSolved, platform: 'GFG' };
+    return { totalSolved: totalSolved };
 
   } catch (error) {
     console.error(`GFG Error (${handle}):`, error.message);
