@@ -162,24 +162,26 @@ const fetchGFGStats = async (handle) => {
   try {
     const isRender = process.env.RENDER === 'true';
     
-    // 🌟 FIX: Agar Render hai toh path ko NULL rakho taaki Puppeteer 
-    // default location (jo humne Build Command mein install ki hai) se uthaye
-    const chromePath = isRender ? null : undefined; 
+    // 🌟 FIX: Render ke liye manual path dalo jo Render ke logs mein dikh raha tha
+    const renderChromePath = '/opt/render/.cache/puppeteer/chrome/linux-145.0.7632.77/chrome-linux64/chrome';
+    const chromePath = isRender ? renderChromePath : undefined;
     
-    console.log("DEBUG: Launching Puppeteer... (Mode: " + (isRender ? 'Render' : 'Local') + ")");
+    console.log("DEBUG: Using executablePath ->", chromePath);
 
     browser = await puppeteer.launch({
       headless: "new",
-      // executablePath hata diya taaki default environment path use ho
+      executablePath: chromePath, // 🌟 Yeh path use karega
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox', 
         '--disable-dev-shm-usage',
         '--single-process', 
-        '--no-zygote'
+        '--no-zygote',
+        '--disable-gpu' // 🌟 Render ke liye zaroori
       ]
     });
-
+    
+    // ... baaki ka code same rahega
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
 
