@@ -162,14 +162,15 @@ const fetchGFGStats = async (handle) => {
   try {
     const isRender = process.env.RENDER === 'true';
     
-    // 🌟 No more hardcoded paths! Auto-detect mode.
-    const chromePath = isRender ? puppeteer.executablePath() : undefined;
+    // 🌟 FIX: Agar Render hai toh path ko NULL rakho taaki Puppeteer 
+    // default location (jo humne Build Command mein install ki hai) se uthaye
+    const chromePath = isRender ? null : undefined; 
     
-    console.log("DEBUG: Puppeteer looking at:", chromePath); 
+    console.log("DEBUG: Launching Puppeteer... (Mode: " + (isRender ? 'Render' : 'Local') + ")");
 
     browser = await puppeteer.launch({
       headless: "new",
-      executablePath: chromePath, 
+      // executablePath hata diya taaki default environment path use ho
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox', 
@@ -178,28 +179,18 @@ const fetchGFGStats = async (handle) => {
         '--no-zygote'
       ]
     });
+
     const page = await browser.newPage();
-    // GFG protection bypass karne ke liye real User Agent
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
 
     const url = `https://www.geeksforgeeks.org/profile/${handle}?tab=activity`;
     console.log(`🔍 Attempting Sync for GFG: ${handle}`);
 
-    // Wait for network to be quiet
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
-
-    // Wait extra for JS elements to render
     await new Promise(r => setTimeout(r, 4000));
 
     const totalSolved = await page.evaluate(() => {
-      // Multiple selectors check kar rahe hain taaki GFG UI update ho to bhi kaam kare
-      const selectors = [
-        '.scoreCard_head_left--score__39_Zz',
-        '.scoreCard_head_card_left',
-        '.problem_solved_value',
-        'div[class*="scoreCard_head_left--score"]'
-      ];
-
+      const selectors = ['.scoreCard_head_left--score__39_Zz', '.scoreCard_head_card_left', '.problem_solved_value'];
       for (let s of selectors) {
         const el = document.querySelector(s);
         if (el && el.innerText && /\d+/.test(el.innerText)) {
