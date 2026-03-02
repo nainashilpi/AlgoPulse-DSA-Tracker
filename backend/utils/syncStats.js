@@ -163,10 +163,13 @@ const fetchGFGStats = async (handle) => {
   try {
     const isRender = process.env.RENDER === 'true';
     
-    // 🌟 FIX: Hardcoded path hata kar auto-detection laga di hai
-    const chromePath = isRender ? puppeteer.executablePath() : undefined;
-    // utils/syncStats.js mein ye line dalo debugging ke liye
-    console.log("DEBUG: Running with path:", chromePath);
+    // 🌟 FIX: Render ke liye manual path
+    const renderChromePath = '/opt/render/chrome/opt/google/chrome/chrome';
+    const chromePath = isRender ? renderChromePath : undefined;
+    
+    // DEBUG: Path check karne ke liye
+    console.log("DEBUG: Using path:", chromePath); 
+    
     browser = await puppeteer.launch({
       headless: "new",
       executablePath: chromePath, 
