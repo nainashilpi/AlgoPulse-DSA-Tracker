@@ -85,6 +85,7 @@
 
 const axios = require('axios');
 const puppeteer = require('puppeteer-extra');
+const path = require('path');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
@@ -157,19 +158,22 @@ const fetchLeetCodeStats = async (handle) => {
  * @desc Fetches GFG total solved count (Updated with Stealth)
  */
 const fetchGFGStats = async (handle) => {
-  if (!handle) return null;
+  if (!handle) return { totalSolved: 0 };
   
   let browser;
   try {
+    // Render pe Chrome dhoondne ke liye path check
+    const isRender = process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
+    const chromePath = '/opt/render/.cache/puppeteer/chrome/linux-145.0.7632.77/chrome-linux64/chrome';
     browser = await puppeteer.launch({
+
       headless: "new",
-      // --- REMOVED hardcoded Windows path ---
-      // Render automatically finds the path if we don't specify it
+      executablePath: isRender ? chromePath : undefined,
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox', 
         '--disable-dev-shm-usage',
-        '--single-process', // Memory bachaane ke liye Render pe zaroori hai
+        '--single-process', 
         '--no-zygote'
       ]
     });
