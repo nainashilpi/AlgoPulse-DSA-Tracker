@@ -161,16 +161,16 @@ const fetchGFGStats = async (handle) => {
   
   let browser;
   try {
-    // --- YAHAN CHANGE KIYA HAI: executablePath add kiya ---
     browser = await puppeteer.launch({
       headless: "new",
-      // --- APNE COMPUTER MEIN CHROME KA PATH CHECK KARKE YAHAN DAALO ---
-      executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', 
+      // --- REMOVED hardcoded Windows path ---
+      // Render automatically finds the path if we don't specify it
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox', 
         '--disable-dev-shm-usage',
-        '--disable-blink-features=AutomationControlled'
+        '--single-process', // Memory bachaane ke liye Render pe zaroori hai
+        '--no-zygote'
       ]
     });
     
