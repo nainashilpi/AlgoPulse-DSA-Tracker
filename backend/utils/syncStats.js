@@ -162,13 +162,13 @@ const fetchGFGStats = async (handle) => {
   
   let browser;
   try {
-    // Render pe Chrome dhoondne ke liye path check
     const isRender = process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
-    const chromePath = '/opt/render/.cache/puppeteer/chrome/linux-145.0.7632.77/chrome-linux64/chrome';
+    
+    const puppeteerPath = isRender ? puppeteer.executablePath() : undefined;
+    
     browser = await puppeteer.launch({
-
       headless: "new",
-      executablePath: isRender ? chromePath : undefined,
+      executablePath: puppeteerPath, // Yahan auto-detected path use karo
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox', 
@@ -177,7 +177,6 @@ const fetchGFGStats = async (handle) => {
         '--no-zygote'
       ]
     });
-    
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
 
