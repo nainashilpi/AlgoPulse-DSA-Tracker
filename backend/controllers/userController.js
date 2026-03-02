@@ -435,172 +435,172 @@ const checkAndAwardBadges = (user) => {
 // -------------------------------------
 
 /**
- * @desc Get Leaderboard
- */
+ * @desc Get Leaderboard
+ */
 exports.getLeaderboard = async (req, res) => {
-  try {
-    const users = await User.find({ role: { $nin: ['Admin', 'admin'] } })
-      .sort({ points: -1, 'stats.totalSolved': -1 })
-      .select('-password').lean();
-    const rankedUsers = users.map((u, index) => ({ ...u, rank: index + 1 }));
-    res.status(200).json(rankedUsers);
-  } catch (err) {
-    res.status(500).json({ message: "SYSTEM_ERROR_LEADERBOARD" });
-  }
+  try {
+   const users = await User.find({ role: { $nin: ['Admin', 'admin'] } })
+     .sort({ points: -1, 'stats.totalSolved': -1 })
+     .select('-password').lean();
+   const rankedUsers = users.map((u, index) => ({ ...u, rank: index + 1 }));
+   res.status(200).json(rankedUsers);
+  } catch (err) {
+   res.status(500).json({ message: "SYSTEM_ERROR_LEADERBOARD" });
+  }
 };
 
 /**
- * @desc Get User Profile
- */
+ * @desc Get User Profile
+ */
 exports.getUserProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select('-password');
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: "PROFILE_FETCH_ERROR" });
-  }
+  try {
+   const user = await User.findById(req.user._id).select('-password');
+   res.json(user);
+  } catch (err) {
+   res.status(500).json({ message: "PROFILE_FETCH_ERROR" });
+  }
 };
 
 /**
- * @desc Update Avatar
- */
+ * @desc Update Avatar
+ */
 exports.updateAvatar = async (req, res) => {
-  try {
-    const { profilePic } = req.body;
-    await User.findByIdAndUpdate(req.user._id, { profilePic });
-    res.json({ message: "AVATAR_UPDATED" });
-  } catch (err) {
-    res.status(500).json({ message: "AVATAR_UPDATE_ERROR" });
-  }
+  try {
+   const { profilePic } = req.body;
+   await User.findByIdAndUpdate(req.user._id, { profilePic });
+   res.json({ message: "AVATAR_UPDATED" });
+  } catch (err) {
+   res.status(500).json({ message: "AVATAR_UPDATE_ERROR" });
+  }
 };
 
 /**
- * @desc Sync Stats - FIXED: Points (10/20/40), GFG Support, Night Penalty & Custom Heatmap + Badges Logic
- */
+ * @desc Sync Stats - FIXED: Points (10/20/40), GFG Support, Night Penalty & Custom Heatmap + Badges Logic
+ */
 exports.syncStats = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: "NODE_NOT_FOUND" });
+  try {
+   const user = await User.findById(req.user._id);
+   if (!user) return res.status(404).json({ message: "NODE_NOT_FOUND" });
 
-    // 1. Fetch data from LeetCode & GFG
-    const [leetData, gfgData] = await Promise.all([
-      fetchLeetCodeStats(user.leetcodeHandle),
-      user.gfgHandle ? fetchGFGStats(user.gfgHandle) : Promise.resolve(null)
-    ]);
+   // 1. Fetch data from LeetCode & GFG
+   const [leetData, gfgData] = await Promise.all([
+     fetchLeetCodeStats(user.leetcodeHandle),
+     user.gfgHandle ? fetchGFGStats(user.gfgHandle) : Promise.resolve(null)
+   ]);
 
-    if (!leetData) return res.status(400).json({ message: "LEETCODE_API_FAILURE" });
+   if (!leetData) return res.status(400).json({ message: "LEETCODE_API_FAILURE" });
 
-    // 2. Dates
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 864e5).toISOString().split('T')[0];
+   // 2. Dates
+   const today = new Date().toISOString().split('T')[0];
+   const yesterday = new Date(Date.now() - 864e5).toISOString().split('T')[0];
 
-    // 3. Difference Logic
-    const newLC = leetData.totalSolved || 0;
-    const newGFG = gfgData?.totalSolved || 0;
-    const newTotalSolved = newLC + newGFG;
+   // 3. Difference Logic
+   const newLC = leetData.totalSolved || 0;
+   const newGFG = gfgData?.totalSolved || 0;
+   const newTotalSolved = newLC + newGFG;
 
-    const oldLC = user.stats?.totalSolved || 0;
-    const oldGFG = user.stats?.gfgSolved || 0;
-    
-    const diffLC = newLC - oldLC;
-    const diffGFG = newGFG - oldGFG;
-    const diffTotal = diffLC + diffGFG;
+   const oldLC = user.stats?.totalSolved || 0;
+   const oldGFG = user.stats?.gfgSolved || 0;
+   
+   const diffLC = newLC - oldLC;
+   const diffGFG = newGFG - oldGFG;
+   const diffTotal = diffLC + diffGFG;
 
-    // --- CASE 1: NAYA SOLVE MILA ---
-    if (diffTotal > 0) {
-      const easyDiff = Math.max(0, leetData.easySolved - (user.stats?.easySolved || 0));
-      const medDiff = Math.max(0, leetData.mediumSolved - (user.stats?.mediumSolved || 0));
-      const hardDiff = Math.max(0, leetData.hardSolved - (user.stats?.hardSolved || 0));
+   // --- CASE 1: NAYA SOLVE MILA ---
+   if (diffTotal > 0) {
+     const easyDiff = Math.max(0, leetData.easySolved - (user.stats?.easySolved || 0));
+     const medDiff = Math.max(0, leetData.mediumSolved - (user.stats?.mediumSolved || 0));
+     const hardDiff = Math.max(0, leetData.hardSolved - (user.stats?.hardSolved || 0));
 
-      let earnedPoints = (easyDiff * 10) + (medDiff * 20) + (hardDiff * 40);
-      if (diffGFG > 0) earnedPoints += (diffGFG * 15);
+     let earnedPoints = (easyDiff * 10) + (medDiff * 20) + (hardDiff * 40);
+     if (diffGFG > 0) earnedPoints += (diffGFG * 15);
 
-      user.points += earnedPoints;
+     user.points += earnedPoints;
 
-      // Streak Logic
-      if (user.lastSolveDate === yesterday) {
-        user.streak += 1;
-      } else if (user.lastSolveDate !== today) {
-        user.streak = 1; 
-      }
-      user.lastSolveDate = today;
+     // Streak Logic
+     if (user.lastSolveDate === yesterday) {
+      user.streak += 1;
+     } else if (user.lastSolveDate !== today) {
+      user.streak = 1; 
+     }
+     user.lastSolveDate = today;
 
-      // Custom Heatmap
-      const historyIdx = user.dailyHistory.findIndex(h => h.date === today);
-      if (historyIdx !== -1) {
-        user.dailyHistory[historyIdx].count += diffTotal;
-      } else {
-        user.dailyHistory.push({ date: today, count: diffTotal });
-      }
+     // Custom Heatmap
+     const historyIdx = user.dailyHistory.findIndex(h => h.date === today);
+     if (historyIdx !== -1) {
+      user.dailyHistory[historyIdx].count += diffTotal;
+     } else {
+      user.dailyHistory.push({ date: today, count: diffTotal });
+     }
       
       // --- ADDED: Check badges when solved ---
       checkAndAwardBadges(user);
-    } 
-    // --- CASE 2: KUCH SOLVE NAHI KIYA ---
-    else {
-      if (user.lastSyncDate !== today) {
-         if (user.lastSolveDate !== today && user.lastSolveDate !== yesterday) {
-            user.streak = 0;
-            user.points = Math.max(0, user.points - 5);
-         }
-      }
+   } 
+   // --- CASE 2: KUCH SOLVE NAHI KIYA ---
+   else {
+     if (user.lastSyncDate !== today) {
+       if (user.lastSolveDate !== today && user.lastSolveDate !== yesterday) {
+         user.streak = 0;
+         user.points = Math.max(0, user.points - 5);
+       }
+     }
       
       // --- ADDED: Check badges even if penalty happens (for streak/totalSolved changes) ---
       checkAndAwardBadges(user);
-    }
+   }
 
-    // 4. Update Database Fields
-    user.lastSyncDate = today;
-    user.stats = {
-      totalSolved: newTotalSolved,
-      gfgSolved: newGFG, 
-      easySolved: leetData.easySolved,
-      mediumSolved: leetData.mediumSolved,
-      hardSolved: leetData.hardSolved
-    };
+     // 4. Update Database Fields
+   user.lastSyncDate = today;
+   user.stats = {
+     totalSolved: newTotalSolved,
+     gfgSolved: newGFG, 
+     easySolved: leetData.easySolved,
+     mediumSolved: leetData.mediumSolved,
+     hardSolved: leetData.hardSolved
+   };
 
-    if (leetData.topics) user.topics = leetData.topics;
+    if (leetData.topics) user.topics = leetData.topics;
 
-    user.markModified('stats');
-    user.markModified('dailyHistory');
-    user.markModified('points');
+    user.markModified('stats');
+    user.markModified('dailyHistory');
+    user.markModified('points');
     user.markModified('badges'); // Mark badges modified
 
-    await user.save();
-    res.json({ status: "SYNC_SUCCESS", user });
+   await user.save();
+   res.json({ status: "SYNC_SUCCESS", user });
 
-  } catch (err) {
-    console.error("Sync Error:", err);
-    res.status(500).json({ message: "SYNC_INTERNAL_ERROR" });
-  }
+  } catch (err) {
+   console.error("Sync Error:", err);
+   res.status(500).json({ message: "SYNC_INTERNAL_ERROR" });
+  }
 };
 
 /**
- * @desc Background Global Sync
- */
+ * @desc Background Global Sync
+ */
 exports.syncAllUsersData = async () => {
-  try {
-    const users = await User.find({ leetcodeHandle: { $exists: true, $ne: "" } });
-    for (const user of users) {
-      const leetData = await fetchLeetCodeStats(user.leetcodeHandle);
-      if (leetData) {
+  try {
+   const users = await User.find({ leetcodeHandle: { $exists: true, $ne: "" } });
+   for (const user of users) {
+     const leetData = await fetchLeetCodeStats(user.leetcodeHandle);
+     if (leetData) {
         // --- ADDED: Global sync mein bhi badges check karo ---
-        user.stats = { 
-            ...user.stats, 
-            totalSolved: leetData.totalSolved,
-            easySolved: leetData.easySolved,
-            mediumSolved: leetData.mediumSolved,
-            hardSolved: leetData.hardSolved
-        };
+      user.stats = { 
+         ...user.stats, 
+         totalSolved: leetData.totalSolved,
+         easySolved: leetData.easySolved,
+         mediumSolved: leetData.mediumSolved,
+         hardSolved: leetData.hardSolved
+      };
         checkAndAwardBadges(user);
         user.markModified('badges');
-        await user.save();
-      }
-    }
-    console.log("--- 🔄 Global Sync Completed ---");
-  } catch (err) {
-    console.error("Global Sync Error:", err.message);
-  }
+      await user.save();
+     }
+   }
+   console.log("--- 🔄 Global Sync Completed ---");
+  } catch (err) {
+   console.error("Global Sync Error:", err.message);
+  }
 };
 
 // ... Rest of the functions (declareWeeklyWinner, etc.) are already correct ...
