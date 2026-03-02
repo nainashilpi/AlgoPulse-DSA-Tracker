@@ -163,8 +163,7 @@ const fetchGFGStats = async (handle) => {
   try {
     const isRender = process.env.RENDER === 'true';
     
-    // 🌟 FIX: Render ka latest path try karte hain
-    const renderChromePath = '/usr/bin/google-chrome';
+    const renderChromePath = '/opt/render/.cache/puppeteer/chrome/linux-125.0.6422.60/chrome-linux64/chrome';
     const chromePath = isRender ? renderChromePath : undefined;
     
     console.log("DEBUG: Using path:", chromePath); 
@@ -180,7 +179,6 @@ const fetchGFGStats = async (handle) => {
         '--no-zygote'
       ]
     });
-
     const page = await browser.newPage();
     // GFG protection bypass karne ke liye real User Agent
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
