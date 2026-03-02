@@ -158,16 +158,15 @@ const fetchLeetCodeStats = async (handle) => {
  */
 const fetchGFGStats = async (handle) => {
   if (!handle) return { totalSolved: 0 };
-  
   let browser;
   try {
     const isRender = process.env.RENDER === 'true';
     
-    const renderChromePath = '/opt/render/.cache/puppeteer/chrome/linux-125.0.6422.60/chrome-linux64/chrome';
-    const chromePath = isRender ? renderChromePath : undefined;
+    // 🌟 No more hardcoded paths! Auto-detect mode.
+    const chromePath = isRender ? puppeteer.executablePath() : undefined;
     
-    console.log("DEBUG: Using path:", chromePath); 
-    
+    console.log("DEBUG: Puppeteer looking at:", chromePath); 
+
     browser = await puppeteer.launch({
       headless: "new",
       executablePath: chromePath, 
