@@ -161,53 +161,43 @@ const fetchGFGStats = async (handle) => {
   let browser;
   try {
     const isRender = process.env.RENDER === 'true';
-    
-    // 🌟 CORRECTED PATH: Build logs ke mutabiq exact binary location
     const renderChromePath = '/opt/render/.cache/puppeteer/chrome/linux-145.0.7632.77/chrome-linux64/chrome';
     const chromePath = isRender ? renderChromePath : undefined;
-    
-    console.log("DEBUG: Using executablePath ->", chromePath);
 
     browser = await puppeteer.launch({
       headless: "new",
-      executablePath: chromePath, 
-      args: [
-        '--no-sandbox', 
-        '--disable-setuid-sandbox', 
-        '--disable-dev-shm-usage',
-        '--single-process', 
-        '--no-zygote',
-        '--disable-gpu'
-      ]
+      executablePath: chromePath,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
-  
-    
+
     const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+    // User Agent zaroori hai GFG ke liye
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-    const url = `https://www.geeksforgeeks.org/profile/${handle}?tab=activity`;
-    console.log(`🔍 Attempting Sync for GFG: ${handle}`);
+    const url = `https://www.geeksforgeeks.org/user/${handle}/`; // Profile URL change hui hai
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
-    await new Promise(r => setTimeout(r, 4000));
+    // Naya Selector jo GFG ab use kar raha hai
+    await page.waitForSelector('.educationDetails_head_left--score__39_Zz, .problem_solved_value', { timeout: 10000 }).catch(() => null);
 
     const totalSolved = await page.evaluate(() => {
-      const selectors = ['.scoreCard_head_left--score__39_Zz', '.scoreCard_head_card_left', '.problem_solved_value'];
-      for (let s of selectors) {
-        const el = document.querySelector(s);
-        if (el && el.innerText && /\d+/.test(el.innerText)) {
-          return parseInt(el.innerText.match(/\d+/)[0]);
+      // GFG ab is class mein "Overall Coding Score" aur "Problems Solved" dikhata hai
+      const elements = document.querySelectorAll('.educationDetails_head_left--score__39_Zz');
+      for (let el of elements) {
+        if (el.innerText.includes("Problems Solved")) {
+          // "Problems Solved(50)" se 50 nikalne ke liye
+          const match = el.innerText.match(/\d+/);
+          return match ? parseInt(match[0]) : 0;
         }
       }
-      return 0;
+      // Fallback selector
+      const fallback = document.querySelector('.problem_solved_value');
+      return fallback ? parseInt(fallback.innerText) : 0;
     });
 
-    console.log(`✅ SUCCESS: GFG Result for ${handle} -> ${totalSolved}`);
     await browser.close();
-    return { totalSolved: totalSolved };
-
+    return { totalSolved: totalSolved || 0 };
   } catch (error) {
-    console.error(`GFG Error (${handle}):`, error.message);
     if (browser) await browser.close();
     return { totalSolved: 0 };
   }
