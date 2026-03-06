@@ -1,12 +1,9 @@
-/* 1. Imports hamesha sabse upar honi chahiye */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-/* 2. Tailwind Directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 3. Global Styles */
 body {
   margin: 0;
   font-family: 'Plus Jakarta Sans', sans-serif;

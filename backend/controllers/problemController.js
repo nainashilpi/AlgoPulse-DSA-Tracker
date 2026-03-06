@@ -34,7 +34,7 @@ exports.updateProblem = async (req, res) => {
     const updatedProblem = await Problem.findByIdAndUpdate(
       id,
       { title, link, difficulty },
-      { new: true, runValidators: true } // runValidators ensures schema rules are followed
+      { new: true, runValidators: true } 
     );
 
     if (!updatedProblem) return res.status(404).json({ message: "Problem not found" });

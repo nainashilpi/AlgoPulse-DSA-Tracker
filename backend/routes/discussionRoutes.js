@@ -10,7 +10,6 @@ const { protect } = require('../middleware/authMiddleware');
  */
 router.get('/', async (req, res) => {
     try {
-        // .lean() processing speed badhata hai aur memory kam use karta hai
         const posts = await Discussion.find()
             .sort({ createdAt: -1 })
             .limit(100) 

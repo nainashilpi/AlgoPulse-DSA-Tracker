@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const WinnerSchema = new mongoose.Schema({
-  weekEnding: { type: Date, required: true }, // Kis Sunday ko jeeta
+  weekEnding: { type: Date, required: true }, 
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   name: { type: String },
   points: { type: Number },

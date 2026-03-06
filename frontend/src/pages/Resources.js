@@ -68,7 +68,6 @@ const Resources = () => {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.08] mix-blend-overlay" />
       </div>
 
-      {/* --- HERO SECTION (MODIFIED: pt-40 for top margin and min-h-screen for centering) --- */}
       <section className="min-h-screen flex flex-col items-center justify-center text-center relative z-10 px-6 pt-20">
         <motion.div initial="hidden" animate="visible" variants={fadeInUp}>
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/5 border border-cyan-500/20 text-[10px] font-bold tracking-[0.3em] text-cyan-400 uppercase mb-8 backdrop-blur-md">
@@ -94,7 +93,6 @@ const Resources = () => {
         </motion.div>
       </section>
 
-      {/* Massive Gap before Roadmap */}
       <div className="h-[20vh]"></div>
 
       {/* --- 01. PLACEMENT PATH --- */}

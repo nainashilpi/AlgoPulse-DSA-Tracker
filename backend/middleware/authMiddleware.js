@@ -8,7 +8,6 @@ const User = require('../models/User');
 const protect = async (req, res, next) => {
   let token;
 
-  // Verify if the authorization header exists and follows the Bearer schema
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       // Extract the token from the Bearer string

@@ -11,7 +11,7 @@ const Register = () => {
     email: "",
     password: "",
     leetcodeHandle: "",
-    gfgHandle: "", // Naya state add kiya
+    gfgHandle: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -123,7 +123,7 @@ const Register = () => {
               </div>
             </div>
 
-            {/* GFG Handle - NAYA FIELD */}
+            {/* GFG Handle */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-semibold text-slate-400 ml-1">GFG Handle (Optional)</label>
               <div className="relative group/input">
