@@ -479,102 +479,104 @@ exports.updateAvatar = async (req, res) => {
  */
 exports.syncStats = async (req, res) => {
   try {
-   const user = await User.findById(req.user._id);
-   if (!user) return res.status(404).json({ message: "NODE_NOT_FOUND" });
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "NODE_NOT_FOUND" });
 
-   // 1. Fetch data from LeetCode & GFG
-   const [leetData, gfgData] = await Promise.all([
-     fetchLeetCodeStats(user.leetcodeHandle),
-     user.gfgHandle ? fetchGFGStats(user.gfgHandle) : Promise.resolve(null)
-   ]);
+    // 1. Fetch data from LeetCode & GFG
+    const [leetData, gfgData] = await Promise.all([
+      fetchLeetCodeStats(user.leetcodeHandle),
+      user.gfgHandle ? fetchGFGStats(user.gfgHandle) : Promise.resolve({ totalSolved: 0 })
+    ]);
 
-   if (!leetData) return res.status(400).json({ message: "LEETCODE_API_FAILURE" });
+    if (!leetData) return res.status(400).json({ message: "LEETCODE_API_FAILURE" });
 
-   // 2. Dates
-   const today = new Date().toISOString().split('T')[0];
-   const yesterday = new Date(Date.now() - 864e5).toISOString().split('T')[0];
+    // 2. Dates
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 864e5).toISOString().split('T')[0];
 
-   // 3. Difference Logic
-   const newLC = leetData.totalSolved || 0;
-   const newGFG = gfgData?.totalSolved || 0;
-   const newTotalSolved = newLC + newGFG;
+    // 3. Difference Logic (Important!)
+    const newLC = leetData.totalSolved || 0;
+    const newGFG = gfgData?.totalSolved || 0;
+    
+    const oldLC = user.stats?.totalSolved - (user.stats?.gfgSolved || 0) || 0; // Pure LeetCode Old
+    const oldGFG = user.stats?.gfgSolved || 0; // Pure GFG Old
+    
+    const diffLC = newLC - (user.stats?.easySolved + user.stats?.mediumSolved + user.stats?.hardSolved || oldLC);
+    const diffGFG = newGFG - oldGFG;
+    const diffTotal = (newLC + newGFG) - (user.stats?.totalSolved || 0);
 
-   const oldLC = user.stats?.totalSolved || 0;
-   const oldGFG = user.stats?.gfgSolved || 0;
-   
-   const diffLC = newLC - oldLC;
-   const diffGFG = newGFG - oldGFG;
-   const diffTotal = diffLC + diffGFG;
+    // --- CASE 1: NAYA SOLVE MILA (LC ya GFG kahin bhi) ---
+    if (diffTotal > 0) {
+      // Calculate LeetCode difficulty-wise diff
+      const easyDiff = Math.max(0, leetData.easySolved - (user.stats?.easySolved || 0));
+      const medDiff = Math.max(0, leetData.mediumSolved - (user.stats?.mediumSolved || 0));
+      const hardDiff = Math.max(0, leetData.hardSolved - (user.stats?.hardSolved || 0));
 
-   // --- CASE 1: NAYA SOLVE MILA ---
-   if (diffTotal > 0) {
-     const easyDiff = Math.max(0, leetData.easySolved - (user.stats?.easySolved || 0));
-     const medDiff = Math.max(0, leetData.mediumSolved - (user.stats?.mediumSolved || 0));
-     const hardDiff = Math.max(0, leetData.hardSolved - (user.stats?.hardSolved || 0));
-
-     let earnedPoints = (easyDiff * 10) + (medDiff * 20) + (hardDiff * 40);
-     if (diffGFG > 0) earnedPoints += (diffGFG * 15);
-
-     user.points += earnedPoints;
-
-     // Streak Logic
-     if (user.lastSolveDate === yesterday) {
-      user.streak += 1;
-     } else if (user.lastSolveDate !== today) {
-      user.streak = 1; 
-     }
-     user.lastSolveDate = today;
-
-     // Custom Heatmap
-     const historyIdx = user.dailyHistory.findIndex(h => h.date === today);
-     if (historyIdx !== -1) {
-      user.dailyHistory[historyIdx].count += diffTotal;
-     } else {
-      user.dailyHistory.push({ date: today, count: diffTotal });
-     }
+      // 🌟 Points Calculation Fix: Multiple questions handle honge
+      let earnedPoints = (easyDiff * 10) + (medDiff * 20) + (hardDiff * 40);
       
-      // --- ADDED: Check badges when solved ---
-      checkAndAwardBadges(user);
-   } 
-   // --- CASE 2: KUCH SOLVE NAHI KIYA ---
-   else {
-     if (user.lastSyncDate !== today) {
-       if (user.lastSolveDate !== today && user.lastSolveDate !== yesterday) {
-         user.streak = 0;
-         user.points = Math.max(0, user.points - 5);
-       }
-     }
-      
-      // --- ADDED: Check badges even if penalty happens (for streak/totalSolved changes) ---
-      checkAndAwardBadges(user);
-   }
+      // GFG Points (15 per question)
+      if (diffGFG > 0) {
+        earnedPoints += (diffGFG * 15);
+      }
 
-     // 4. Update Database Fields
-   user.lastSyncDate = today;
-   user.stats = {
-     totalSolved: newTotalSolved,
-     gfgSolved: newGFG, 
-     easySolved: leetData.easySolved,
-     mediumSolved: leetData.mediumSolved,
-     hardSolved: leetData.hardSolved
-   };
+      user.points += earnedPoints;
+
+      // Streak Logic
+      if (user.lastSolveDate === yesterday) {
+        user.streak += 1;
+      } else if (user.lastSolveDate !== today) {
+        user.streak = 1; 
+      }
+      user.lastSolveDate = today;
+
+      // Custom Heatmap Update
+      const historyIdx = user.dailyHistory.findIndex(h => h.date === today);
+      if (historyIdx !== -1) {
+        user.dailyHistory[historyIdx].count += diffTotal;
+      } else {
+        user.dailyHistory.push({ date: today, count: diffTotal });
+      }
+      
+      checkAndAwardBadges(user);
+    } 
+    // --- CASE 2: KUCH SOLVE NAHI KIYA ---
+    else {
+      if (user.lastSyncDate !== today) {
+        if (user.lastSolveDate !== today && user.lastSolveDate !== yesterday) {
+          user.streak = 0;
+          user.points = Math.max(0, user.points - 5);
+        }
+      }
+      checkAndAwardBadges(user);
+    }
+
+    // 4. Update Database Fields (Final Stats Update)
+    user.lastSyncDate = today;
+    user.stats = {
+      totalSolved: newLC + newGFG, // LC + GFG dono ka sum
+      gfgSolved: newGFG, 
+      easySolved: leetData.easySolved,
+      mediumSolved: leetData.mediumSolved,
+      hardSolved: leetData.hardSolved
+    };
 
     if (leetData.topics) user.topics = leetData.topics;
 
+    // Explicitly marking for Mongoose
     user.markModified('stats');
     user.markModified('dailyHistory');
     user.markModified('points');
-    user.markModified('badges'); // Mark badges modified
+    user.markModified('badges');
 
-   await user.save();
-   res.json({ status: "SYNC_SUCCESS", user });
+    await user.save();
+    res.json({ status: "SYNC_SUCCESS", user });
 
   } catch (err) {
-   console.error("Sync Error:", err);
-   res.status(500).json({ message: "SYNC_INTERNAL_ERROR" });
+    console.error("Sync Error:", err);
+    res.status(500).json({ message: "SYNC_INTERNAL_ERROR" });
   }
 };
-
 /**
  * @desc Background Global Sync
  */
