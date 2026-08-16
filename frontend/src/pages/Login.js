@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from 'react-hot-toast';
 import { Mail, Lock, LogIn, Fingerprint, Activity, Loader2, ShieldCheck } from "lucide-react";
 
 const Login = () => {
@@ -21,12 +22,13 @@ const Login = () => {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       
+      toast.success("Authentication successful! Welcome back.");
       setTimeout(() => {
         navigate("/dashboard");
       }, 800);
     } catch (err) {
       console.error("Authentication failed:", err);
-      alert(err.response?.data?.message || "Login failed. Please check your credentials.");
+      toast.error(err.response?.data?.message || "Login failed. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -38,7 +40,6 @@ const Login = () => {
       {/* Background Glow */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-cyan-500/[0.03] blur-[120px]" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.1] mix-blend-overlay" />
       </div>
 
       <motion.div

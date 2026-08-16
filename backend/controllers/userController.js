@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Winner = require('../models/Winner');
+const Notification = require('../models/Notification');
 const { fetchLeetCodeStats, fetchGFGStats } = require('../utils/syncStats.js');
 
 const checkAndAwardBadges = (user) => {
@@ -170,7 +171,7 @@ exports.syncAllUsersData = async () => {
 
 exports.declareWeeklyWinner = async (req, res) => {
     try {
-        const topUser = await User.findOne({ role: { $nin: ['Admin', 'admin'] }, points: { $gt: 0 } })
+        const topUser = await User.findOne({ role: { $nin: ['Admin', 'admin'] } })
             .sort({ points: -1, 'stats.totalSolved': -1 }).lean();
         if (!topUser) return res.status(404).json({ message: "ZERO_ACTIVITY_DETECTED" });
         const newWinner = new Winner({
@@ -183,6 +184,11 @@ exports.declareWeeklyWinner = async (req, res) => {
             stats: topUser.stats
         });
         await newWinner.save();
+        await Notification.create({
+            message: `🏆 New Season Winner: ${newWinner.name} (@${newWinner.leetcodeHandle || 'N/A'}) with ${newWinner.points} points! Huge congratulations! 🎉`,
+            type: 'Promotion',
+            createdBy: 'AlgoPulse System'
+        });
         res.status(200).json({ message: "CHAMPION_CROWNED", winner: newWinner });
     } catch (err) {
         res.status(500).json({ message: "WINNER_LOG_FAILURE" });
