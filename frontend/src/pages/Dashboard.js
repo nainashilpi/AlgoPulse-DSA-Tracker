@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, useScroll, useSpring, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 import { 
   Activity, Zap, Target, Calendar, Award, 
   RefreshCcw, Camera, Box, ArrowUpRight, Cpu, Lock,
@@ -66,11 +67,11 @@ const ProgressDashboard = () => {
         const updatedData = res.data.user || res.data;
         setUser({ ...updatedData });
         localStorage.setItem('user', JSON.stringify(updatedData));
-        if (updatedData.points > oldPoints) alert(`Success! +${updatedData.points - oldPoints} Points earned! 🚀`);
-        else if (updatedData.points < oldPoints) alert(`Warning: -5 Points Penalty! No new activity. ⚠️`);
-        else alert("Synced! No changes found.");
+        if (updatedData.points > oldPoints) toast.success(`Success! +${updatedData.points - oldPoints} Points earned! 🚀`);
+        else if (updatedData.points < oldPoints) toast.error(`Warning: -5 Points Penalty! No new activity. ⚠️`);
+        else toast("Synced! No changes found.");
       }
-    } catch (err) { alert("Sync Failed!"); } 
+    } catch (err) { toast.error("Sync Failed!"); } 
     finally { setIsSyncing(false); }
   };
 
@@ -85,7 +86,7 @@ const ProgressDashboard = () => {
         const token = localStorage.getItem('token');
         await axios.post(`${BASE_URL}/api/users/update-avatar`, { profilePic: base64Image }, { headers: { Authorization: `Bearer ${token}` } });
         setUser({ ...user, profilePic: base64Image });
-      } catch (err) { alert("Update Failed"); }
+      } catch (err) { toast.error("Update Failed"); }
     };
   };
 

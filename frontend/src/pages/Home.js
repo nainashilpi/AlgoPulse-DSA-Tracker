@@ -22,7 +22,6 @@ const Home = () => {
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 left-1/4 w-full h-[700px] bg-emerald-500/[0.04] blur-[150px] rounded-full" />
         <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-purple-600/[0.03] blur-[180px] rounded-full" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.18] mix-blend-overlay" />
       </div>
 
       {/* ================= HERO SECTION ================= */}

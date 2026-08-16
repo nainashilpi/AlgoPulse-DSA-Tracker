@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from 'react-hot-toast';
 import { User, Mail, Lock, Code2, UserPlus, Activity, Loader2, ShieldCheck, Binary } from "lucide-react"; // Binary icon add kiya GFG ke liye
 
 const Register = () => {
@@ -24,11 +25,11 @@ const Register = () => {
     try {
       await axios.post(`${BASE_URL}/api/auth/register`, formData);
       
-      alert("Registration successful! Your neural link is active.");
+      toast.success("Registration successful! Your neural link is active.");
       navigate("/login");
     } catch (err) {
       console.error("Auth Error:", err.response?.data);
-      alert(err.response?.data?.message || "Registration failed. Please try again.");
+      toast.error(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -40,7 +41,6 @@ const Register = () => {
       {/* Background Glow Elements */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-cyan-500/[0.03] blur-[120px]" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.1] mix-blend-overlay" />
       </div>
 
       <motion.div

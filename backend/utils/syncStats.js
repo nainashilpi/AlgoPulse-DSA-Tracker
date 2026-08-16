@@ -1,7 +1,4 @@
 const axios = require('axios');
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-puppeteer.use(StealthPlugin());
 
 
 /**
@@ -75,44 +72,17 @@ const fetchLeetCodeStats = async (handle) => {
  */
 const fetchGFGStats = async (handle) => {
   if (!handle) return { totalSolved: 0 };
-  let browser;
   try {
-    const isRender = process.env.RENDER === 'true';
-    const renderChromePath = '/opt/render/.cache/puppeteer/chrome/linux-145.0.7632.77/chrome-linux64/chrome';
-    const chromePath = isRender ? renderChromePath : undefined;
+    const baseUrl = process.env.GFG_STATS_API_URL || 'https://gfg-stats.tashif.codes';
+    const response = await axios.get(`${baseUrl}/${handle}`, { timeout: 15000 });
+    const data = response.data;
 
-    browser = await puppeteer.launch({
-      headless: "new",
-      executablePath: chromePath, 
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-  
-    
-    const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    if (!data || data.status !== 'success') return { totalSolved: 0 };
 
-    const url = `https://www.geeksforgeeks.org/user/${handle}/`; 
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-
-    await page.waitForSelector('.educationDetails_head_left--score__39_Zz, .problem_solved_value', { timeout: 10000 }).catch(() => null);
-
-    const totalSolved = await page.evaluate(() => {
-      const elements = document.querySelectorAll('.educationDetails_head_left--score__39_Zz');
-      for (let el of elements) {
-        if (el.innerText.includes("Problems Solved")) {
-          const match = el.innerText.match(/\d+/);
-          return match ? parseInt(match[0]) : 0;
-        }
-      }
-      const fallback = document.querySelector('.problem_solved_value');
-      return fallback ? parseInt(fallback.innerText) : 0;
-    });
-
-    await browser.close();
+    const totalSolved = data.totalProblemsSolved ?? data.data?.totalSolved ?? 0;
     return { totalSolved: totalSolved || 0 };
   } catch (error) {
-    console.error(`GFG Error (${handle}):`, error.message);
-    if (browser) await browser.close();
+    console.error(`GFG Fetch Error (${handle}):`, error.message);
     return { totalSolved: 0 };
   }
 };

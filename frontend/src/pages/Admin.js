@@ -189,7 +189,6 @@ const Admin = () => {
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/[0.03] blur-[120px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/[0.03] blur-[120px] rounded-full" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.12] mix-blend-overlay" />
       </div>
 
       <div className="max-w-6xl mx-auto px-6 relative z-10">
@@ -422,7 +421,7 @@ const Admin = () => {
         </div>
 
       </div>
-      <style jsx>{` 
+      <style>{` 
         .no-scrollbar::-webkit-scrollbar { display: none; } 
         .custom-scrollbar::-webkit-scrollbar { width: 4px; } 
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34, 211, 238, 0.1); border-radius: 10px; } 
