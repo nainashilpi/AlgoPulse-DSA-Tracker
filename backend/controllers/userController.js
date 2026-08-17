@@ -170,9 +170,21 @@ exports.syncAllUsersData = async () => {
 
 exports.declareWeeklyWinner = async (req, res) => {
     try {
-        const topUser = await User.findOne({ role: { $nin: ['Admin', 'admin'] }, points: { $gt: 0 } })
-            .sort({ points: -1, 'stats.totalSolved': -1 }).lean();
-        if (!topUser) return res.status(404).json({ message: "ZERO_ACTIVITY_DETECTED" });
+        console.log("DECLARE_WINNER: Called by", req.user?.name, "| Role:", req.user?.role);
+        
+        // ✅ FIXED: Removed points: { $gt: 0 } restriction
+        const topUser = await User.findOne({ 
+            role: { $nin: ['Admin', 'admin'] }
+        })
+        .sort({ points: -1, 'stats.totalSolved': -1 })
+        .lean();
+        
+        console.log("DECLARE_WINNER: Top user ->", topUser?.name, "| Points:", topUser?.points);
+        
+        if (!topUser) {
+            return res.status(404).json({ message: "NO_USERS_FOUND" });
+        }
+        
         const newWinner = new Winner({
             weekEnding: new Date(),
             userId: topUser._id,
@@ -182,10 +194,21 @@ exports.declareWeeklyWinner = async (req, res) => {
             profilePic: topUser.profilePic,
             stats: topUser.stats
         });
+        
         await newWinner.save();
-        res.status(200).json({ message: "CHAMPION_CROWNED", winner: newWinner });
+        console.log("DECLARE_WINNER: Winner saved ->", newWinner._id);
+        
+        res.status(200).json({ 
+            message: "CHAMPION_CROWNED", 
+            winner: newWinner 
+        });
+
     } catch (err) {
-        res.status(500).json({ message: "WINNER_LOG_FAILURE" });
+        console.error("DECLARE_WINNER_ERROR:", err);
+        res.status(500).json({ 
+            message: "WINNER_LOG_FAILURE", 
+            error: err.message 
+        });
     }
 };
 
