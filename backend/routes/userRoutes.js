@@ -77,4 +77,13 @@ router.delete('/:id', protect, admin, async (req, res) => {
     }
 });
 
+// ADD THIS - Debug route (remove after fixing)
+router.get('/debug-auth', protect, admin, (req, res) => {
+  res.json({ 
+    user: req.user.name, 
+    role: req.user.role,
+    message: "Admin access confirmed" 
+  });
+});
+console.log("Backend URL:", process.env.REACT_APP_BACKEND_URL)
 module.exports = router;
